@@ -1,0 +1,40 @@
+# Variaveis de ambiente e credenciais locais
+.env
+.env.*
+!.env.example
+auth.json
+*.pem
+*.key
+
+# Dependencias
+vendor/
+node_modules/
+
+# Artefatos de build e testes
+dist/
+coverage/
+.phpunit.cache/
+.phpunit.result.cache
+*.tsbuildinfo
+/backend/public/build/
+/backend/public/hot
+/backend/public/storage
+/backend/storage/*.key
+/backend/storage/logs/*
+/backend/storage/framework/cache/data/*
+/backend/storage/framework/sessions/*
+/backend/storage/framework/views/*
+/backend/bootstrap/cache/*.php
+
+# Dados locais e dumps
+*.sqlite
+*.sqlite3
+*.sql
+*.sql.gz
+
+# Logs e arquivos locais do editor / sistema
+*.log
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
