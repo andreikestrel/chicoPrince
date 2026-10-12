@@ -1,0 +1,67 @@
+name: chico-prince
+
+services:
+  laravel.test:
+    build:
+      context: ./vendor/laravel/sail/runtimes/8.4
+      dockerfile: Dockerfile
+      args:
+        WWWGROUP: '${WWWGROUP:-1000}'
+    image: chico-prince/sail-8.4:local
+    ports:
+      - '127.0.0.1:${APP_PORT:-8081}:80'
+    environment:
+      WWWUSER: '${WWWUSER:-1000}'
+      LARAVEL_SAIL: 1
+      XDEBUG_MODE: 'off'
+    volumes:
+      - '.:/var/www/html'
+    networks:
+      - sail
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  frontend:
+    image: node:24-bookworm-slim
+    working_dir: /app
+    command: sh -c "npm ci && npm run dev"
+    environment:
+      API_PROXY_TARGET: http://laravel.test
+    ports:
+      - '127.0.0.1:5173:5173'
+    volumes:
+      - '../frontend:/app'
+      - 'frontend-node-modules:/app/node_modules'
+    networks:
+      - sail
+    depends_on:
+      - laravel.test
+
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: '${DB_ROOT_PASSWORD:?Execute scripts/init-env.php primeiro}'
+      MYSQL_DATABASE: '${DB_DATABASE:-chico_prince}'
+      MYSQL_USER: '${DB_USERNAME:-chico_prince}'
+      MYSQL_PASSWORD: '${DB_PASSWORD:?Execute scripts/init-env.php primeiro}'
+    volumes:
+      - 'sail-mysql:/var/lib/mysql'
+    networks:
+      - sail
+    healthcheck:
+      test: ['CMD-SHELL', 'MYSQL_PWD="$$MYSQL_PASSWORD" mysql --protocol=TCP -h 127.0.0.1 -u "$$MYSQL_USER" "$$MYSQL_DATABASE" -e "SELECT 1" >/dev/null 2>&1']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+networks:
+  sail:
+    driver: bridge
+
+volumes:
+  frontend-node-modules:
+    driver: local
+  sail-mysql:
+    driver: local
