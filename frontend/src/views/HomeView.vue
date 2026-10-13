@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import CatalogSort from '../components/CatalogSort.vue'
 import CouponNotice from '../components/CouponNotice.vue'
 import CatalogCarousel from '../components/CatalogCarousel.vue'
 import { useCategories, catalogLocation } from '../composables/useCategories'
@@ -28,6 +29,15 @@ async function applyFilters(query: Record<string, string>) {
   await load()
   router.push(catalogLocation(query))
 }
+function changeSort(sort: string, direction: string) {
+  const query = { ...route.query, sort, direction }
+  delete (query as LocationQuery).page
+  router.push({
+    name: route.params.categorySlug ? 'category' : 'home',
+    params: route.params.categorySlug ? { categorySlug: route.params.categorySlug } : {},
+    query,
+  })
+}
 function changePage(page: number) {
   router.push({ name: route.params.categorySlug ? 'category' : 'home', params: route.params.categorySlug ? { categorySlug: route.params.categorySlug } : {}, query: { ...route.query, page: String(page) } })
 }
@@ -41,7 +51,8 @@ function changePage(page: number) {
   </section>
   <CouponNotice />
   <CatalogCarousel />
-  <ProductFilters :query="filterForm" @apply="applyFilters" @clear="applyFilters({})" />
+  <ProductFilters :query="filterForm" :show-sorting="false" @apply="applyFilters" @clear="applyFilters({})" />
+  <CatalogSort :query="route.query" @change="changeSort" />
   <section class="catalog-results" aria-label="Produtos" :aria-busy="loading">
     <p v-if="loading && !result" class="catalog-message" role="status">Carregando produtos…</p>
     <div v-else-if="error" class="catalog-message" role="alert">
