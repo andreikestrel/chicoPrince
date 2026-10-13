@@ -15,14 +15,14 @@ const router = useRouter()
 const { categories, load } = useCategories()
 onMounted(() => load(true))
 const filters = computed<LocationQuery>(() => {
-  const query = { ...route.query }
+  const query: LocationQuery = { sort: 'name', direction: 'asc', ...route.query }
   if (route.params.categorySlug) {
     delete query.category
     query.category_slug = String(route.params.categorySlug)
   }
   return query
 })
-const filterForm = computed(() => ({ ...route.query, ...(route.params.categorySlug ? { category: categories.value.find(category => category.slug === route.params.categorySlug)?.name ?? String(route.params.categorySlug) } : {}) }))
+const filterForm = computed(() => ({ sort: 'name', direction: 'asc', ...route.query, ...(route.params.categorySlug ? { category: categories.value.find(category => category.slug === route.params.categorySlug)?.name ?? String(route.params.categorySlug) } : {}) }))
 const { result, loading, error, fetchProducts } = useProducts(ref(true), filters)
 
 async function applyFilters(query: Record<string, string>) {
