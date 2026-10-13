@@ -9,8 +9,8 @@ A base de desenvolvimento está funcional: Laravel e MySQL executam em container
 as migrations iniciais estão aplicadas e o Vue consulta a saúde da API e do banco.
 O modelo e os dados de exemplo estão disponíveis. O contrato REST está documentado;
 a autenticação por sessão e o CRUD da API estão disponíveis. O catálogo público
-oferece busca, filtros combinados, ordenação e paginação. Login e gerenciamento
-pela interface ainda estão em desenvolvimento.
+oferece busca, filtros combinados, ordenação, paginação e detalhes dos produtos.
+Login e logout estão disponíveis na interface; gerenciamento está em desenvolvimento.
 
 ## Stack e arquitetura
 
@@ -110,7 +110,7 @@ O usuário padrão é `dev@example.test`. Sua senha vem de `SEED_USER_PASSWORD` 
 ambiente local, gerada pelo script e nunca impressa. Consulte esse valor somente
 no seu arquivo privado. O seeder preserva usuários existentes e não redefine
 suas senhas. Os seeders de demonstração aceitam apenas ambientes local/testing.
-O login já está disponível por API; a tela será implementada na etapa de frontend.
+Entre em `/login` usando essas credenciais locais. A página `/conta` permite sair da sessão.
 
 ### 4. Acessar
 
@@ -232,11 +232,12 @@ O registro é síncrono e operacional, sem garantia de auditoria transacional.
 
 ## Base da interface
 
-Vue Router organiza `/` (catálogo), `/conta` (consulta da sessão) e a página 404.
+Vue Router organiza `/` (catálogo), `/produtos/:id` (detalhe público), `/login`,
+`/conta` (consulta da sessão e logout) e a página 404.
 O layout compartilha a navegação; cada rota atualiza o título da página.
 Axios centraliza base da API, cookies, CSRF, timeout e normalização dos erros.
 O composable `useAuth` compartilha a sessão em memória, sem armazenar senhas ou
-tokens no navegador, e oferece consulta, login e logout para as próximas telas.
+tokens no armazenamento do navegador, e oferece consulta, login e logout.
 Uma sessão ausente é tratada como visitante; falhas de conexão permitem nova tentativa.
 
 O catálogo usa cards com preço em reais, categoria, disponibilidade e alternativa
@@ -249,8 +250,17 @@ ou navegar pelo histórico. Requisições anteriores são canceladas para evitar
 respostas atrasadas substituam a consulta atual. Há estados de carregamento, vazio
 e erro com nova tentativa.
 
-A página de conta ainda não contém formulário de login. Detalhes e gerenciamento
-serão implementados nas próximas etapas. Em produção,
+O detalhe mostra descrição, imagem, preço, categoria e estoque; produtos inexistentes
+recebem uma mensagem específica. O retorno ao catálogo preserva a consulta na URL.
+Imagem e fallback são compartilhados entre cards e detalhe.
+
+O login prepara o CSRF e autentica por cookie de sessão; credenciais inválidas,
+falha de conexão, expiração do CSRF e limite de tentativas recebem feedback.
+Após entrar, a interface abre a conta; ao recarregar, consulta a sessão no servidor.
+A senha é limpa ao concluir cada tentativa. Usuários autenticados que acessam
+`/login` são encaminhados para `/conta`. Logout atualiza o estado compartilhado.
+
+O gerenciamento será implementado nas próximas etapas. Em produção,
 o servidor da SPA deverá redirecionar rotas do frontend para index.html, preservando
 as rotas `/api`; o Vite já oferece esse fallback em desenvolvimento.
 
@@ -288,6 +298,10 @@ Verificado no ambiente de desenvolvimento:
 - Catálogo no navegador como visitante: filtros combinados, preços em ordem
   decrescente, paginação, restauração pelo histórico, reset da página ao filtrar,
   resultado vazio, validação 422 e recuperação após falha de rede simulada.
+- Detalhe público, produto inexistente, retorno com filtros e recuperação após
+  falha de rede; login real com usuário temporário, senha inválida, restauração
+  da sessão ao recarregar, redirecionamento de autenticado e logout. O usuário
+  temporário foi removido ao final.
 
 O procedimento foi executado também em uma cópia isolada dos arquivos versionados,
 sem ambiente nem dependências locais copiados, com banco e volumes novos.
@@ -298,7 +312,7 @@ Não foi adicionada suíte automatizada de frontend nesta etapa.
 
 ## Limitações e próximos passos
 
-Ainda faltam as interfaces de detalhe, login e gerenciamento e o polimento da
+Ainda faltam as interfaces de gerenciamento e o polimento da
 entrega. O formato de erros e o Resource de produtos estão preparados;
 o endpoint de saúde mantém seu formato explícito de diagnóstico.
 

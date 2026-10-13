@@ -29,6 +29,7 @@ async function signOut() {
       <p v-else>{{ error }}</p>
     </div>
     <button v-if="status === 'authenticated'" :disabled="busy" @click="signOut">{{ busy ? 'Saindo…' : 'Sair da conta' }}</button>
+    <RouterLink v-else-if="status === 'guest'" class="back-link" to="/login">Entrar na conta</RouterLink>
     <button v-else :disabled="status === 'loading'" @click="refreshSession">Verificar sessão</button>
     <p v-if="actionError" role="alert">{{ actionError }}</p>
   </section>

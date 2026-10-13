@@ -2,7 +2,7 @@
 import { onMounted } from 'vue'
 import { useAuth } from './composables/useAuth'
 
-const { refreshSession } = useAuth()
+const { refreshSession, status } = useAuth()
 onMounted(refreshSession)
 </script>
 
@@ -13,6 +13,7 @@ onMounted(refreshSession)
       <nav aria-label="Navegação principal">
         <RouterLink to="/">Catálogo</RouterLink>
         <RouterLink to="/conta">Minha conta</RouterLink>
+        <RouterLink v-if="status === 'guest'" to="/login">Entrar</RouterLink>
       </nav>
     </header>
     <RouterView />
