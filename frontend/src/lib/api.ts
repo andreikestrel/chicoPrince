@@ -33,6 +33,12 @@ api.interceptors.response.use(response => response, (error: unknown) => {
   return Promise.reject(new ApiError('Não foi possível concluir a operação.', 0, 'unexpected_error'))
 })
 
+let csrfRequest: Promise<void> | null = null
+
 export async function prepareCsrf(): Promise<void> {
-  await api.get('/csrf-cookie')
+  // O middleware web renova este cookie nas respostas. Axios envia o header.
+  // Ausencia exige bootstrap; token expirado continua sendo rejeitado pelo servidor.
+  if (document.cookie.split(';').some(cookie => cookie.trim().startsWith('XSRF-TOKEN='))) return
+  if (!csrfRequest) csrfRequest = api.get('/csrf-cookie').then(() => undefined).finally(() => { csrfRequest = null })
+  return csrfRequest
 }
