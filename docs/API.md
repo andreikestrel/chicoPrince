@@ -1,5 +1,7 @@
 # Contrato REST
 
+[Projeto](../README.md) · [Backend](backend/README.md) · [Testes](TESTING.md)
+
 Contrato da API de produtos. Autenticação por sessão, CRUD, ProductResource e
 tratamento de exceções, filtros, paginação configurável, ordenação e logs estão implementados.
 
@@ -35,6 +37,12 @@ POST/PUT/PATCH/DELETE, envie o valor decodificado do cookie XSRF-TOKEN no header
 X-XSRF-TOKEN, junto dos cookies e `Accept: application/json`. A sessão é HttpOnly;
 somente o cookie de CSRF deve ser lido pelo JavaScript. Repita a preparação após
 expiração da sessão. Cookie de sessão é renovado no login e invalidado no logout.
+
+
+Na SPA, o login renova o cookie CSRF antes de enviar as credenciais. Se uma
+requisição retornar 419, a próxima tentativa explícita prepara um token novo,
+mesmo que ainda exista um cookie antigo. A operação de escrita não é reenviada
+automaticamente.
 
 Credenciais incorretas retornam 401 genérico. O login permite cinco tentativas
 por minuto por IP, incluindo tentativas válidas; excesso retorna 429 com Retry-After.
@@ -74,7 +82,8 @@ Todos os parâmetros abaixo podem ser combinados por AND:
 | Parâmetro | Regra |
 |---|---|
 | search | Busca parcial por nome, até 255 caracteres |
-| category | Categoria exata, até 100 caracteres |
+| category | Nome exato da categoria principal ou de um item do caminho, até 100 caracteres |
+| category_slug | Slug de categoria, até 200 caracteres; não combinar com category |
 | min_price / max_price | Limites inclusivos; mínimo não pode superar máximo |
 | in_stock | 1 filtra estoque > 0; 0 ou ausente não restringe disponibilidade |
 | page | Inteiro >= 1; padrão 1 |
@@ -237,3 +246,26 @@ e demo_variants (booleano). As categorias disponíveis incluem a categoria princ
 e cada item do caminho importado. Banner.category mantém uma única categoria de destino,
 validada contra essa união. Filtros category e category_slug buscam tanto a categoria
 principal quanto a presença no JSON category_path, combinados com os demais filtros.
+### Exemplo de finalização
+
+Com sessão e CSRF válidos, envie IDs e preço atuais obtidos no detalhe do produto:
+
+    {
+      "request_key": "746ab1f2-5720-4d4b-b178-a3ea4c97ec18",
+      "coupon": "PRIMEIRACOMPRA",
+      "items": [{"variant_id": 1, "quantity": 1, "unit_price": "49.90"}],
+      "address": {
+        "recipient": "Cliente de demonstração",
+        "cep": "01001000",
+        "street": "Praça da Sé",
+        "number": "1",
+        "complement": "",
+        "district": "Sé",
+        "city": "São Paulo",
+        "state": "SP"
+      }
+    }
+
+Nesse exemplo, se a conta for elegível e preço/estoque corresponderem ao banco,
+subtotal será 4990, discount 499, shipping 0 e total 4491 (centavos).
+Gere uma UUID nova para cada compra diferente; preserve a chave ao repetir a mesma tentativa.
