@@ -38,6 +38,7 @@ coverage/
 .vscode/
 .DS_Store
 Thumbs.db
-AGENTS.md
-CLAUDE.md
-TASKS.md
+/IA
+/AGENTS.md
+/CLAUDE.md
+/TASKS.md

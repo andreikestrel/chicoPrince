@@ -1,155 +1,176 @@
-# Chico Prince
+﻿# Chico Prince
 
-Projeto de teste técnico Full Stack: catálogo de produtos com API Laravel,
-MySQL e aplicação Vue 3 consumindo a própria API.
+Aplicação de catálogo de produtos desenvolvida para um teste técnico Full Stack,
+com API Laravel, banco MySQL e interface Vue 3 que consome a própria API.
 
-## Estado atual
+## Estado do projeto
 
-TASKS 0.3 e 0.4 em desenvolvimento. O backend e a base Vue estão criados.
-A primeira construção do Sail foi interrompida por falta de espaço no disco C:.
-O armazenamento do Docker será transferido para G: antes de retomar os containers.
+A base de desenvolvimento está funcional: Laravel e MySQL executam em containers,
+as migrations iniciais estão aplicadas e o Vue consulta a saúde da API e do banco.
+O catálogo, os dados de exemplo, a autenticação e o CRUD ainda estão em desenvolvimento.
 
-O frontend compila e abre no navegador, mas a integração real com Laravel/MySQL
-ainda não passou. CRUD, autenticação e catálogo serão implementados depois deste lote.
+## Stack e arquitetura
 
-## Estrutura
+| Camada | Tecnologia |
+|---|---|
+| API | PHP 8.4 / Laravel 12 |
+| Banco de dados | MySQL 8.4 |
+| Interface | Vue 3 / TypeScript / Vite |
+| Ambiente de desenvolvimento | Docker Compose / Laravel Sail / Node 24 |
 
-- [backend/](./backend/): Laravel 12, endpoint de saúde, migrations iniciais e Sail.
-- [frontend/](./frontend/): Vue 3, TypeScript, Vite e verificação de conexão.
-- [backend/compose.yaml](./backend/compose.yaml): único Compose do monorepo.
-- [backend/scripts/init-env.php](./backend/scripts/init-env.php): cria configuração
-  local com valores aleatórios, sem sobrescrever ambiente existente.
+Versões verificadas: PHP 8.4.26, Laravel 12.69.3, Sail 1.68.0,
+Node 24.21.0, Vue 3.5.43 e Vite 8.3.4. Os locks do Composer e npm
+registram as dependências; as tags das imagens podem receber atualizações.
 
-Os marcadores `.gitkeep` originais foram preservados.
-
-## Ambiente e armazenamento
-
-- Docker Desktop 4.94.0, Engine 29.8.2 e Compose v5.5.1 foram validados na TASK 0.2,
-  com Ubuntu integrado ao WSL2.
-- Código, dependências do projeto e cache npm desta etapa ficam em G:.
-- Destino solicitado para os dados do Docker: `G:\DockerData`, fora do repositório.
-  A transferência ainda está pendente; não reiniciar builds enquanto o disco não
-  estiver transferido ou houver espaço suficiente no local atual.
-- O disco C: chegou a aproximadamente 15 MB livres durante os downloads/builds.
-  O encerramento normal do Docker excedeu o prazo; nenhuma limpeza destrutiva
-  de imagens ou volumes foi executada.
-
-No PowerShell, se Docker não for reconhecido após a instalação, atualizar o PATH
-da sessão ou fechar todas as janelas do VS Code e reabrir pelo menu Iniciar:
-
-```powershell
-$env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')
-docker compose version
+```text
+Navegador → Vue/Vite (:5173) → /api → Laravel (:80 interno) → MySQL (:3306 interno)
 ```
 
-## Arquitetura local
+- [backend/](./backend/): API, migrations, testes e configuração do Sail.
+- [frontend/](./frontend/): aplicação Vue com Composition API e componentes TypeScript.
+- [backend/compose.yaml](./backend/compose.yaml): orquestra os três serviços.
 
-| Serviço | Runtime | Acesso no host | Persistência |
-|---|---|---|---|
-| `laravel.test` | Runtime oficial Sail / PHP 8.4 | `127.0.0.1:8081` → 80 | Bind mount do backend |
-| `mysql` | MySQL 8.4 | Sem porta publicada | Volume `sail-mysql` em `/var/lib/mysql` |
-| `frontend` | Node 24 / Vite | `127.0.0.1:5173` → 5173 | Bind mount do frontend e volume para `node_modules` |
+| Serviço | Acesso local | Persistência |
+|---|---|---|
+| `laravel.test` | http://localhost:8081 | Código compartilhado com o host |
+| `frontend` | http://localhost:5173 | Código compartilhado; dependências em volume nomeado |
+| `mysql` | Somente pela rede interna | Volume nomeado `sail-mysql` |
 
-A porta 8080 estava ocupada; adotamos 8081. As publicações ficam limitadas ao
-loopback. Serviços compartilham a rede `sail`; Laravel acessa `mysql:3306`.
-O healthcheck do MySQL executa uma consulta com o usuário da aplicação antes de
-liberar a inicialização do backend.
+Laravel acessa o banco pelo nome `mysql`. O healthcheck do banco executa uma consulta
+com o usuário da aplicação antes de liberar a inicialização do backend.
+As portas publicadas ficam restritas ao loopback.
 
-O navegador solicita `/api/health` ao Vite. Dentro do Compose, o proxy encaminha
-a chamada para `http://laravel.test`. Rodando Vite no host, o destino padrão é
-`http://127.0.0.1:8081`. Isso dispensa CORS para este fluxo de desenvolvimento.
-O proxy do Vite não é uma configuração de produção.
+## Executar em desenvolvimento
 
-- **Imagem:** pacote do runtime usado para criar containers.
-- **Container:** instância da imagem, que pode ser recriada.
-- **Bind mount:** compartilha os arquivos locais de código com o container.
-- **Volume nomeado:** mantém dados separados do ciclo de vida do container.
-- **Porta publicada:** permite acesso pelo host; os serviços entre si usam nomes
-  e portas da rede Docker.
+### Pré-requisitos
 
-MySQL mantém seus dados ao parar/recriar containers. `docker compose down -v`
-remove volumes e dados; não usar no fluxo normal. Node/Vite roda separado do PHP.
-O polling do Vite facilita observar mudanças no disco Windows, com maior uso de CPU.
-Nenhuma pasta do projeto foi movida para o filesystem Linux.
+- Git e Docker com Compose, usando containers Linux.
+- No Windows: Docker Desktop com WSL2 habilitado.
+- Portas 8081 e 5173 disponíveis e espaço para imagens e volumes Docker.
 
-## Preparação e execução
+PHP, Composer e Node não precisam estar instalados no host.
+Execute os comandos na raiz do repositório, após cloná-lo.
 
-Os comandos abaixo devem ser executados na raiz do repositório, com Docker Desktop
-em modo Linux e integração Ubuntu habilitada. A sequência completa em instalação
-limpa será validada na TASK 0.5; a execução do Compose permanece bloqueada pelo disco.
+### 1. Preparar o backend
 
-Instalar dependências PHP e criar o ambiente local via container de bootstrap:
+O comando abaixo funciona no PowerShell e em shells POSIX, usando o diretório atual:
 
-```powershell
+```sh
 docker run --rm --mount "type=bind,source=${PWD}/backend,target=/var/www/html" -w /var/www/html laravelsail/php84-composer:latest sh -lc 'php scripts/init-env.php && composer install --no-interaction'
+```
+
+O [script de ambiente](./backend/scripts/init-env.php) cria o arquivo local de
+configuração a partir de [.env.example](./backend/.env.example), com chave da aplicação
+e senhas aleatórias. Se ele já existe, seus valores são preservados.
+Nenhuma credencial precisa ser incluída no repositório.
+
+### 2. Construir e iniciar os serviços
+
+```sh
 docker compose -f backend/compose.yaml config --quiet
 docker compose -f backend/compose.yaml up -d --build
-docker compose -f backend/compose.yaml exec laravel.test php artisan migrate
 ```
 
-O script gera `APP_KEY`, senha do usuário MySQL e senha administrativa apenas no
-arquivo local ignorado `.env`. O exemplo permanece sem esses valores.
-Se o ambiente já existe, o script o preserva. Não substituir as senhas depois de
-inicializar o volume do banco sem planejar a atualização das credenciais no MySQL.
+O primeiro build do Sail pode levar alguns minutos. O frontend executa `npm ci`
+ao iniciar, usando o lock versionado.
 
-O frontend usa `npm ci` no início do serviço, respeitando seu arquivo de lock.
-Seu exemplo de ambiente é opcional: os padrões já funcionam no Compose.
-PHP/Composer e Node não precisam estar instalados no host para esse fluxo.
+### 3. Ajustar permissões e executar migrations
 
-Acessos esperados após inicialização:
+O bootstrap roda como `root`, enquanto o servidor PHP usa o usuário `sail`.
+Ajuste a propriedade apenas da configuração local e dos diretórios que Laravel escreve:
 
-- Frontend: http://localhost:5173
-- Saúde da API e banco: http://localhost:8081/api/health
-- Saúde básica do Laravel: http://localhost:8081/up
+```sh
+docker compose -f backend/compose.yaml exec laravel.test chown -R sail:sail .env storage bootstrap/cache
+docker compose -f backend/compose.yaml restart laravel.test
+docker compose -f backend/compose.yaml exec --user sail laravel.test php artisan migrate
+```
 
-O endpoint `/api/health` retorna HTTP 200 e
-`{"data":{"status":"ok","database":"ok"}}` quando consegue executar `SELECT 1`.
-Se o banco falha, retorna 503 sem divulgar mensagens internas da conexão.
+Aguarde o servidor iniciar após o restart. Use `--user sail` nos comandos Artisan
+para manter os arquivos gerados acessíveis ao processo web. No WSL/Linux, também
+é possível usar `./vendor/bin/sail` dentro de [backend/](./backend/).
 
-No Ubuntu/WSL, dentro de [backend/](./backend/), também é possível usar
-`./vendor/bin/sail` para os comandos do mesmo Compose.
+As migrations atuais criam as tabelas iniciais do Laravel. Migrations e seeders de
+produtos ainda não foram implementados; não há catálogo de exemplo nem credencial
+de login disponível nesta etapa.
 
-## Verificações executadas neste lote
+### 4. Acessar
 
-| Verificação | Resultado |
+- Interface: http://localhost:5173 — deve mostrar “Tudo conectado”.
+- Saúde da API e MySQL: http://localhost:8081/api/health.
+- Saúde básica do Laravel: http://localhost:8081/up.
+
+`GET /api/health` executa `SELECT 1` e retorna HTTP 200:
+
+```json
+{"data":{"status":"ok","database":"ok"}}
+```
+
+Se a consulta falhar, retorna HTTP 503 com os estados `unavailable`, sem expor
+mensagens internas da conexão.
+
+## Variáveis de ambiente
+
+Os exemplos versionados documentam a configuração sem segredos:
+[backend/.env.example](./backend/.env.example) e
+[frontend/.env.example](./frontend/.env.example).
+
+| Variável | Finalidade / padrão |
 |---|---|
-| Composer / Laravel | Dependências instaladas: Laravel 12.69.3 e Sail 1.68.0; lock gerado |
-| Pint nos cinco arquivos PHP implementados | PASSOU |
-| PHPUnit no container de bootstrap | PASSOU: 4 testes, 7 assertions; SQLite de teste, sem validar o MySQL real |
-| Compose somente backend/MySQL | `config --quiet` passou antes de adicionar frontend |
-| Build Sail e início do MySQL | INTERROMPIDOS por falta de espaço; migrations não executadas |
-| `npm run build` | PASSOU: checagem TypeScript e build Vite 8.3.4 |
-| Navegador | Vue carregou e mostrou estado de erro para API indisponível (502 do proxy) |
-| Vue → Laravel → MySQL | PENDENTE |
-| Compose com frontend | PENDENTE de validação após recuperar Docker |
+| `APP_KEY` | Chave gerada pelo script de ambiente |
+| `APP_URL` / `APP_PORT` | URL local / porta 8081 |
+| `APP_DEBUG` | `false`, para evitar exposição de detalhes internos |
+| `DB_CONNECTION` / `DB_HOST` / `DB_PORT` | `mysql` / `mysql` / `3306` |
+| `DB_DATABASE` / `DB_USERNAME` | Banco e usuário `chico_prince` |
+| `DB_PASSWORD` / `DB_ROOT_PASSWORD` | Senhas geradas localmente |
+| `WWWUSER` / `WWWGROUP` | UID/GID do usuário Sail, padrão 1000 |
+| `VITE_API_BASE_URL` | `/api`, prefixo usado pelo navegador |
+| `API_PROXY_TARGET` | `http://laravel.test` no Compose; `http://127.0.0.1:8081` para Vite no host |
 
-O build do frontend foi executado com o Node 22.14.0 já instalado no G:, usando
-cache em `frontend/node_modules/.cache`. A execução prevista no Compose usa Node 24.
-Vue instalado: 3.5.43. Testes automatizados de frontend não foram adicionados.
+O frontend funciona sem copiar seu exemplo: os padrões atendem ao Compose.
+Após inicializar o volume MySQL, mudar uma senha no ambiente não altera a senha
+armazenada no banco; as duas precisam ser atualizadas de forma coordenada.
 
-Comandos de validação quando os containers estiverem disponíveis:
+## Decisões e trade-offs
 
-```powershell
+- Monorepo para manter API, interface e instruções de execução juntas.
+- Sail usa o runtime oficial do Laravel; simplifica o setup, mas a imagem inclui
+  ferramentas que aumentam o tamanho e a duração do primeiro build.
+- Node/Vite roda em serviço separado, com dependências próprias.
+- O proxy do Vite permite consumir a API pela mesma origem em desenvolvimento.
+  Ele não substitui a configuração de entrega da aplicação em produção.
+- MySQL não publica porta no host. Seu volume preserva os dados ao recriar containers.
+- Polling no Vite facilita detectar mudanças em bind mounts, com maior uso de CPU.
+- A base usa recursos nativos do Laravel e `fetch` no Vue, sem camadas extras para
+  a consulta simples de saúde.
+
+## Verificações
+
+```sh
 docker compose -f backend/compose.yaml ps
-docker compose -f backend/compose.yaml exec laravel.test php artisan migrate:status
-docker compose -f backend/compose.yaml exec laravel.test php artisan test
+docker compose -f backend/compose.yaml exec --user sail laravel.test php artisan migrate:status
+docker compose -f backend/compose.yaml exec --user sail laravel.test php artisan test
 docker compose -f backend/compose.yaml exec frontend npm run build
-Invoke-RestMethod http://localhost:8081/api/health
-Invoke-RestMethod http://localhost:5173/api/health
 ```
 
-## Segurança e próximos passos
+Verificado no ambiente de desenvolvimento:
 
-Ambientes locais, credenciais, dependências e builds ficam fora do Git. Locks devem
-ser versionados. Este ambiente serve ao desenvolvimento local. O README público
-fica na raiz; documentação de colaboração existente foi preservada.
+- Build e inicialização dos três serviços pelo Compose.
+- Migrations iniciais executadas no MySQL.
+- Suíte backend: 4 testes e 7 assertions, usando SQLite isolado nos testes.
+- TypeScript e build Vite executados no container Node.
+- HTTP 200 nas rotas de saúde e no proxy do Vite, com consulta real ao MySQL.
+- Navegador: estados de erro e sucesso da conexão, incluindo nova tentativa.
 
-Neste lote falta concluir armazenamento no G:, construir/subir os containers,
-executar migrations e verificar a conexão real no navegador. As tarefas seguintes
-dependem de aprovação humana.
+A instalação integral em uma máquina limpa ainda precisa ser validada.
+Não foi adicionada suíte automatizada de frontend nesta etapa.
 
-Referências: [Laravel Sail](https://laravel.com/docs/12.x/sail),
-[Docker com WSL2](https://docs.docker.com/desktop/features/wsl/),
-[rede do Compose](https://docs.docker.com/compose/how-tos/networking/),
-[volumes](https://docs.docker.com/engine/storage/volumes/) e
-[Vite](https://vite.dev/guide/).
+## Limitações e próximos passos
+
+Ainda faltam os requisitos de domínio: produtos e seeders, autenticação,
+FormRequests, CRUD, filtros combináveis, paginação, ordenação, logs e as respectivas
+interfaces. A padronização geral dos erros e respostas será definida junto ao
+contrato da API; o endpoint de saúde já possui formato explícito.
+
+Importação externa, filas, monitoramento e Elasticsearch não estão implementados.
+São opcionais e ficam subordinados à conclusão dos requisitos obrigatórios.
+Nenhum serviço externo de produtos é necessário para executar a base atual.
