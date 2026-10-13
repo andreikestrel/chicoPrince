@@ -11,6 +11,8 @@ const { status, refreshSession } = useAuth()
 const isEdit = computed(() => route.params.id !== undefined)
 const empty = { name: '', description: '', image: '', price: '', category: '', stock: '0' }
 const form = reactive({ ...empty })
+const variants = ref<{ color: string; size: string; stock: number }[]>([])
+const hadVariants = ref(false)
 const loading = ref(false)
 const busy = ref(false)
 const loadError = ref('')
@@ -26,6 +28,7 @@ async function load() {
   const request = new AbortController()
   controller = request
   Object.assign(form, empty)
+  variants.value = []; hadVariants.value = false
   loadError.value = ''
   message.value = ''
   errors.value = {}
@@ -36,6 +39,8 @@ async function load() {
     const { data } = await api.get<{ data: Product }>(`/products/${encodeURIComponent(String(route.params.id))}`, { signal: request.signal })
     if (!request.signal.aborted) {
       const product = data.data
+      variants.value = (product.variants ?? []).map(({ color, size, stock }) => ({ color, size, stock }))
+      hadVariants.value = variants.value.length > 0
       Object.assign(form, { name: product.name, description: product.description, image: product.image ?? '', price: product.price, category: product.category, stock: String(product.stock) })
     }
   } catch (cause) {
@@ -50,7 +55,7 @@ async function save() {
   const current = generation
   const editing = isEdit.value
   const id = String(route.params.id)
-  const payload = { ...form, image: form.image.trim() || null }
+  const payload = { ...form, image: form.image.trim() || null, ...(variants.value.length || hadVariants.value ? { variants: variants.value } : {}) }
   busy.value = true
   message.value = ''
   errors.value = {}
@@ -103,12 +108,23 @@ onBeforeUnmount(() => { generation++; controller?.abort() })
           <label for="product-price">Preço (R$)</label>
           <input id="product-price" v-model="form.price" type="number" min="0" max="99999999.99" step="0.01" required :aria-invalid="!!errors.price" aria-describedby="error-price" />
           <p id="error-price" class="error">{{ errors.price?.join(' ') }}</p>
-          <label for="product-stock">Estoque</label>
-          <input id="product-stock" v-model="form.stock" type="number" min="0" max="4294967295" step="1" required :aria-invalid="!!errors.stock" aria-describedby="error-stock" />
+          <label for="product-stock">Estoque {{ variants.length ? 'total (calculado pelas variações)' : 'legado (sem variações)' }}</label>
+          <input id="product-stock" :value="variants.length ? variants.reduce((sum, variant) => sum + Number(variant.stock), 0) : form.stock" :disabled="!!variants.length" @input="form.stock = ($event.target as HTMLInputElement).value" type="number" min="0" max="4294967295" step="1" required :aria-invalid="!!errors.stock" aria-describedby="error-stock" />
           <p id="error-stock" class="error">{{ errors.stock?.join(' ') }}</p>
           <label for="product-image">URL da imagem (opcional)</label>
           <input id="product-image" v-model="form.image" type="url" maxlength="2048" :aria-invalid="!!errors.image" aria-describedby="error-image" />
           <p id="error-image" class="error">{{ errors.image?.join(' ') }}</p>
+          <h2>Variações de cor e tamanho</h2>
+          <p>Cadastre pelo menos uma combinação para habilitar a compra. Preço e imagem são compartilhados. Remover uma combinação a torna indisponível nos carrinhos.</p>
+          <p v-if="errors.variants" class="error">{{ errors.variants.join(' ') }}</p>
+          <div v-for="(variant, index) in variants" :key="index" class="variant-editor">
+            <label>Cor<input v-model="variant.color" maxlength="60" required /></label>
+            <label>Tamanho<input v-model="variant.size" maxlength="30" required /></label>
+            <label>Estoque<input v-model.number="variant.stock" type="number" min="0" max="1000000" step="1" required /></label>
+            <button type="button" class="secondary" :aria-label="`Remover variação ${index + 1}`" @click="variants.splice(index, 1)">Remover</button>
+            <p v-for="field in ['color', 'size', 'stock']" :key="field" class="error">{{ errors[`variants.${index}.${field}`]?.join(' ') }}</p>
+          </div>
+          <button type="button" class="secondary" :disabled="variants.length >= 100" @click="variants.push({ color: '', size: '', stock: 0 })">Adicionar variação</button>
           <button type="submit">{{ busy ? 'Salvando…' : isEdit ? 'Salvar alterações' : 'Criar produto' }}</button>
         </fieldset>
       </form>

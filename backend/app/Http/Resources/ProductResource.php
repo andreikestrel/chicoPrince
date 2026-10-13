@@ -17,6 +17,12 @@ class ProductResource extends JsonResource
             'price' => $this->price,
             'category' => $this->category,
             'stock' => $this->stock,
+            'variants' => $this->whenLoaded('variants', fn () => $this->variants->map(fn ($variant) => [
+                'id' => $variant->id,
+                'color' => $variant->color,
+                'size' => $variant->size,
+                'stock' => $variant->stock,
+            ])),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

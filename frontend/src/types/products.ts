@@ -1,3 +1,5 @@
+export interface ProductVariant { id: number; color: string; size: string; stock: number }
+
 export interface Product {
   id: number
   name: string
@@ -5,6 +7,7 @@ export interface Product {
   image: string | null
   price: string
   category: string
+  variants?: ProductVariant[]
   stock: number
   created_at: string | null
   updated_at: string | null

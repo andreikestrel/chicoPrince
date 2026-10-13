@@ -123,3 +123,8 @@ button:disabled { cursor: default; }
 .row-actions a.icon-button:hover { background: #d5ddce; }
 .table-scroll .product-actions-column { width: 1%; white-space: nowrap; }
 .table-scroll summary { min-width: 0; }
+.variant-selector { display: grid; gap: 12px; max-width: 360px; margin: 24px 0; }
+.variant-selector label, .variant-editor label { display: flex; flex-direction: column; gap: 6px; }
+.variant-editor { display: grid; grid-template-columns: 1fr 1fr 1fr auto; align-items: end; gap: 10px; padding: 12px; border: 1px solid #c7d0c2; border-radius: 8px; }
+.variant-editor .error { grid-column: 1 / -1; }
+@media (max-width: 600px) { .variant-editor { grid-template-columns: 1fr 1fr; } }

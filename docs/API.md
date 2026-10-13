@@ -171,3 +171,17 @@ Comandos de seed e alterações diretas no banco não passam por esse registro d
 - Disponível: filtros, ordenação/per_page configuráveis e logs de operações.
 - Testes do contrato usam rotas temporárias exclusivas do processo PHPUnit;
   essas rotas não existem na aplicação em execução.
+
+## Variações de produto
+GET /api/products/{id}, POST e PATCH/PUT retornam também variants:
+lista de {id, color, size, stock}. A listagem paginada mantém o formato compacto.
+
+POST/PATCH/PUT aceitam variants como lista de até 100 objetos {color, size, stock}.
+Cor (até 60 caracteres) e tamanho (até 30) são obrigatórios, normalizados para
+maiúsculas e sem espaços nas pontas. Estoque por combinação: inteiro 0..1000000.
+Combinações repetidas são rejeitadas com 422. Enviar a lista substitui o conjunto:
+combinações mantidas preservam IDs; omitidas são removidas; lista vazia remove todas.
+Omitir variants preserva o conjunto. Cadastro e variações são gravados em transação.
+Quando existem variações, stock é a soma calculada; escrita direta desse agregado
+é ignorada. Produtos antigos sem variações mantêm seu estoque até serem configurados.
+Preço e imagem pertencem ao produto base; variações não têm preço independente.
