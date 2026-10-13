@@ -1,13 +1,21 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { nextTick, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuth } from './composables/useAuth'
 
 const { refreshSession, status } = useAuth()
+const route = useRoute()
 onMounted(refreshSession)
+function focusContent() { document.getElementById('main-content')?.focus() }
+watch(() => route.path, async () => {
+  await nextTick()
+  focusContent()
+})
 </script>
 
 <template>
-  <main>
+  <div class="app-shell">
+    <a class="skip-link" href="#main-content" @click.prevent="focusContent">Pular para o conteúdo</a>
     <header>
       <RouterLink class="brand" to="/" aria-label="Chico Prince, início">CHICO PRINCE<span>®</span></RouterLink>
       <nav aria-label="Navegação principal">
@@ -17,7 +25,7 @@ onMounted(refreshSession)
         <RouterLink v-if="status === 'guest'" to="/login">Entrar</RouterLink>
       </nav>
     </header>
-    <RouterView />
-    <footer>Chico Prince · Ambiente de desenvolvimento</footer>
-  </main>
+    <main id="main-content" tabindex="-1"><RouterView /></main>
+    <footer>Chico Prince · Catálogo de produtos</footer>
+  </div>
 </template>
