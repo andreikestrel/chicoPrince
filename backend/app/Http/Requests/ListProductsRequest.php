@@ -24,7 +24,7 @@ class ListProductsRequest extends FormRequest
             'in_stock' => ['nullable', 'boolean'],
             'page' => ['sometimes', 'required', 'integer', 'min:1', 'max:2147483647'],
             'per_page' => ['sometimes', 'required', 'integer', 'min:1', 'max:100'],
-            'sort' => ['sometimes', 'required', Rule::in(['id', 'name', 'price', 'created_at'])],
+            'sort' => ['sometimes', 'required', Rule::in(['id', 'name', 'price', 'category', 'created_at', 'updated_at'])],
             'direction' => ['sometimes', 'required', Rule::in(['asc', 'desc'])],
         ];
     }

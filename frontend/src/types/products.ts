@@ -6,6 +6,8 @@ export interface Product {
   price: string
   category: string
   stock: number
+  created_at: string | null
+  updated_at: string | null
 }
 
 export interface ProductPage {

@@ -27,6 +27,26 @@ class ProductFiltersTest extends TestCase
             ->assertJsonPath('data.0.price', '30.00');
     }
 
+    public function test_category_and_update_sorting_cover_all_pages_and_break_ties_by_id(): void
+    {
+        $b = Product::factory()->create(['category' => 'B', 'updated_at' => '2026-01-03 12:00:00']);
+        $a1 = Product::factory()->create(['category' => 'A', 'updated_at' => '2026-01-01 12:00:00']);
+        $a2 = Product::factory()->create(['category' => 'A', 'updated_at' => '2026-01-03 12:00:00']);
+
+        foreach ([
+            ['category', 'asc', [$a1->id, $a2->id, $b->id]],
+            ['category', 'desc', [$b->id, $a2->id, $a1->id]],
+            ['updated_at', 'asc', [$a1->id, $b->id, $a2->id]],
+            ['updated_at', 'desc', [$a2->id, $b->id, $a1->id]],
+        ] as [$sort, $direction, $ids]) {
+            $first = $this->getJson("/api/products?sort={$sort}&direction={$direction}&per_page=2")
+                ->assertOk()->assertJsonPath('meta.total', 3)
+                ->assertJsonPath('data.0.id', $ids[0])->assertJsonPath('data.1.id', $ids[1]);
+            $this->getJson($first->json('links.next'))->assertOk()
+                ->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $ids[2]);
+        }
+    }
+
     public function test_invalid_parameters_are_rejected(): void
     {
         foreach (['per_page=101', 'per_page=0', 'page=0', 'page=abc', 'sort=password', 'direction=drop', 'min_price=-1', 'max_price=1.234', 'min_price=20&max_price=10', 'in_stock=maybe', 'search[]=x', 'sort[]=id'] as $query) {

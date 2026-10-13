@@ -2,7 +2,7 @@
 import { reactive, watch } from 'vue'
 import type { LocationQuery } from 'vue-router'
 
-const props = defineProps<{ query: LocationQuery }>()
+const props = withDefaults(defineProps<{ query: LocationQuery; showSorting?: boolean }>(), { showSorting: true })
 const emit = defineEmits<{ apply: [filters: Record<string, string>]; clear: [] }>()
 const defaults = { search: '', category: '', min_price: '', max_price: '', in_stock: false, sort: 'id', direction: 'asc', per_page: '15' }
 const form = reactive({ ...defaults })
@@ -44,8 +44,8 @@ function clear() {
       <label>Categoria<input v-model="form.category" maxlength="100" placeholder="Nome da categoria" /></label>
       <label>Preço mínimo (R$)<input v-model="form.min_price" type="number" min="0" max="99999999.99" step="0.01" placeholder="0,00" /></label>
       <label>Preço máximo (R$)<input v-model="form.max_price" type="number" min="0" max="99999999.99" step="0.01" placeholder="Sem limite" /></label>
-      <label>Ordenar por<select v-model="form.sort"><option value="id">Cadastro</option><option value="name">Nome</option><option value="price">Preço</option><option value="created_at">Data de criação</option></select></label>
-      <label>Ordem<select v-model="form.direction"><option value="asc">Crescente</option><option value="desc">Decrescente</option></select></label>
+      <label v-if="showSorting">Ordenar por<select v-model="form.sort"><option value="id">Cadastro</option><option value="name">Nome</option><option value="price">Preço</option><option value="category">Categoria</option><option value="created_at">Data de criação</option><option value="updated_at">Data de atualização</option></select></label>
+      <label v-if="showSorting">Ordem<select v-model="form.direction"><option value="asc">Crescente</option><option value="desc">Decrescente</option></select></label>
       <label>Itens por página<input v-model="form.per_page" type="number" min="1" max="100" step="1" required /></label>
     </div>
     <div class="filter-actions">

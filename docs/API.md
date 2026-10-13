@@ -80,7 +80,7 @@ Todos os parâmetros abaixo podem ser combinados por AND:
 | in_stock | 1 filtra estoque > 0; 0 ou ausente não restringe disponibilidade |
 | page | Inteiro >= 1; padrão 1 |
 | per_page | Inteiro de 1 a 100; padrão 15 |
-| sort | Allowlist: id, name, price, created_at; padrão id |
+| sort | Allowlist: id, name, price, category, created_at, updated_at; padrão id |
 | direction | asc ou desc; padrão asc |
 
 Ordenação usa desempate por id na mesma direção para paginação previsível.

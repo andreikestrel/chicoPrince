@@ -20,6 +20,7 @@ let controller: AbortController | undefined
 let generation = 0
 
 async function load() {
+  if (!['product-create', 'product-edit'].includes(String(route.name))) return
   generation++
   controller?.abort()
   const request = new AbortController()
@@ -58,7 +59,7 @@ async function save() {
     await (editing
       ? api.patch<{ data: Product }>(`/products/${encodeURIComponent(id)}`, payload)
       : api.post<{ data: Product }>('/products', payload))
-    if (current === generation) await router.replace({ name: 'home' })
+    if (current === generation) await router.replace({ name: 'admin-products', query: route.query })
   } catch (cause) {
     if (current !== generation) return
     if (cause instanceof ApiError) {
@@ -76,7 +77,7 @@ onBeforeUnmount(() => { generation++; controller?.abort() })
 
 <template>
   <section class="editor-section" aria-labelledby="editor-title">
-    <RouterLink class="back-link" to="/">← Voltar ao catálogo</RouterLink>
+    <RouterLink class="back-link" :to="{ name: 'admin-products', query: route.query }">← Voltar aos produtos</RouterLink>
     <h1 id="editor-title">{{ isEdit ? 'Editar produto' : 'Criar produto' }}</h1>
     <p v-if="status === 'loading'" role="status">Consultando sua sessão…</p>
     <div v-else-if="status !== 'authenticated'">
