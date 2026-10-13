@@ -1,14 +1,21 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 const props = defineProps<{ src: string | null; alt: string }>()
 const failed = ref(false)
+const safeSrc = computed(() => {
+  if (!props.src) return null
+  try {
+    const url = new URL(props.src)
+    return ['http:', 'https:'].includes(url.protocol) ? url.href : null
+  } catch { return null }
+})
 watch(() => props.src, () => { failed.value = false })
 </script>
 
 <template>
   <div class="product-image">
-    <img v-if="src && !failed" :src="src" :alt="alt" loading="lazy" @error="failed = true" />
+    <img v-if="safeSrc && !failed" :src="safeSrc" :alt="alt" loading="lazy" decoding="async" referrerpolicy="no-referrer" @error="failed = true" />
     <div v-else class="image-placeholder">
       <span aria-hidden="true">CP</span>
       <small>Imagem indisponível</small>

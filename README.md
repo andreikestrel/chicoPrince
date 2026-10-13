@@ -1,4 +1,4 @@
-﻿# Chico Prince
+# Chico Prince
 
 Aplicação de catálogo de produtos desenvolvida para um teste técnico Full Stack,
 com API Laravel, banco MySQL e interface Vue 3 que consome a própria API.
@@ -260,14 +260,31 @@ Após entrar, a interface abre a conta; ao recarregar, consulta a sessão no ser
 A senha é limpa ao concluir cada tentativa. Usuários autenticados que acessam
 `/login` são encaminhados para `/conta`. Logout atualiza o estado compartilhado.
 
-Usuários autenticados acessam `/produtos/novo` pelo cabeçalho e edição em
-`/produtos/:id/editar` pelo detalhe. Uma única view deriva `isEdit` do ID da rota:
+Usuários autenticados acessam `/admin/products` pelo cabeçalho. O painel reúne
+tabela com todos os campos e imagens, busca, filtros, ordenação, paginação e
+visualização conjunta dos selecionados. A seleção fica restrita à página atual
+e é limpa ao mudar os filtros ou a página. Não existe papel administrativo separado:
+a política do teste permite escrita a qualquer usuário autenticado.
+
+Criar (`/admin/products/new`) e editar (`/admin/products/:id/edit`) usam uma única
+view que deriva `isEdit` do ID da rota:
 criação envia POST e edição carrega os dados e envia PATCH. O formulário apresenta
 validações por campo e bloqueia envios duplicados enquanto salva. A imagem é uma
 URL opcional, sem upload. Após criar ou editar com sucesso, a interface retorna
-automaticamente ao catálogo, que consulta os dados atualizados. Falhas mantêm o formulário aberto.
-No detalhe, excluir exige confirmação nativa do navegador; cancelar não envia DELETE.
+automaticamente à tabela, preservando os filtros e consultando dados atualizados.
+Falhas mantêm o formulário aberto. As antigas rotas de formulário redirecionam ao painel.
+Excluir um produto ou a seleção exige confirmação com nomes e quantidade;
+cancelar não envia DELETE. A exclusão em lote usa chamadas individuais sequenciais,
+informa falhas parciais e mantém somente os itens pendentes selecionados para nova tentativa.
+Não há garantia de atomicidade do lote. Gerenciamento não aparece no detalhe público.
 A interface exibe sucesso ou erro, e a API exige sessão e CSRF nas três operações.
+
+Catálogo e painel compartilham consulta e paginação. Consultas anteriores são
+canceladas e a lista permanece visível durante atualização. O bootstrap de CSRF
+só é solicitado quando o cookie está ausente; validação no servidor permanece ativa.
+O layout oferece atalho para o conteúdo, foco após navegação, labels e tabela com
+rolagem horizontal acessível. Imagens externas usam apenas HTTP(S), carregamento
+adiado, fallback e política sem envio de Referer.
 
 Em produção,
 o servidor da SPA deverá redirecionar rotas do frontend para index.html, preservando
@@ -314,6 +331,11 @@ Verificado no ambiente de desenvolvimento:
 - CRUD pela interface: visitante sem formulário de escrita; criação, erro 422 por
   campo, edição de preço/estoque, cancelamento e confirmação de exclusão. Produto
   e usuário temporários removidos ao final.
+- Painel: filtros/paginação, seleção da página, visualização conjunta, criação e edição
+  com retorno à tabela, cancelamento e exclusão parcial simulada com repetição somente
+  da falha. CSRF sem header rejeitado com 419 por HTTP real.
+
+Veja a [revisão de segurança e desempenho](./docs/REVIEW.md) para escopo e limitações.
 
 O procedimento foi executado também em uma cópia isolada dos arquivos versionados,
 sem ambiente nem dependências locais copiados, com banco e volumes novos.
@@ -324,8 +346,9 @@ Não foi adicionada suíte automatizada de frontend nesta etapa.
 
 ## Limitações e próximos passos
 
-Ainda faltam a revisão de responsividade/acessibilidade, segurança e o polimento da
-entrega. Mensagens detalhadas de validação do Laravel ainda usam o idioma padrão
+Ainda falta o polimento final da entrega.
+Carrinho, compra e checkout estão planejados, ainda não implementados.
+Mensagens detalhadas de validação do Laravel ainda usam o idioma padrão
 em inglês. O formato de erros e o Resource de produtos estão preparados;
 o endpoint de saúde mantém seu formato explícito de diagnóstico.
 
