@@ -1,8 +1,7 @@
 # Contrato REST
 
 Contrato da API de produtos. Autenticação por sessão, CRUD, ProductResource e
-tratamento de exceções estão implementados. Filtros e ordenação configuráveis
-abaixo são planejados para a próxima etapa.
+tratamento de exceções, filtros, paginação configurável, ordenação e logs estão implementados.
 
 ## Rotas e códigos de sucesso
 
@@ -70,9 +69,8 @@ e estoque inteiro entre 0 e 4294967295.
 
 ## Listagem e paginação
 
-A listagem atual usa 15 itens por página, ordenados por id ascendente, e aceita
-`page`. Os demais parâmetros abaixo ainda não são aplicados. Implementação
-planejada para a tarefa de filtros, combináveis por AND:
+A listagem usa 15 itens por página por padrão, ordenados por id ascendente.
+Todos os parâmetros abaixo podem ser combinados por AND:
 
 | Parâmetro | Regra |
 |---|---|
@@ -85,8 +83,13 @@ planejada para a tarefa de filtros, combináveis por AND:
 | sort | Allowlist: id, name, price, created_at; padrão id |
 | direction | asc ou desc; padrão asc |
 
-Ordenação terá desempate por id para paginação previsível. Parâmetros inválidos
-receberão 422. Os links de paginação preservarão os filtros.
+Ordenação usa desempate por id na mesma direção para paginação previsível.
+Parâmetros inválidos recebem 422. Os links preservam os filtros validados.
+Busca trata `%`, `_` e `!` como caracteres literais; sensibilidade a maiúsculas
+e acentos segue a collation do banco. Preços têm no máximo duas casas decimais.
+Filtros textuais vazios são ignorados; page/per_page/sort/direction vazios são inválidos.
+
+Exemplo: `/api/products?search=Canecas&category=Canecas&min_price=50&max_price=100&in_stock=1&per_page=2&sort=price&direction=desc`.
 
 Coleções usam o formato nativo de Resources paginados do Laravel: `data` é uma
 lista de produtos, `links` contém first/last/prev/next e `meta` inclui
@@ -149,9 +152,22 @@ inclusive com debug habilitado. O registro interno de exceções do Laravel é m
 O diagnóstico existente `/api/health` mantém seu contrato próprio: 200 com
 `data.status` e `data.database` iguais a `ok`, ou 503 com ambos `unavailable`.
 
+## Logs de operações
+
+Após cada criação, atualização ou exclusão bem-sucedida via API, o canal `products`
+registra `product.created`, `product.updated` ou `product.deleted`, com `product_id`
+e `user_id`. O logger acrescenta timestamp e nível. Não registra payloads,
+descrições, credenciais, cookies ou tokens. Tentativas rejeitadas não geram eventos
+de sucesso. Uma atualização válida sem mudança de valores ainda registra a operação.
+
+Arquivos em `backend/storage/logs/products-YYYY-MM-DD.log`, rotação diária e retenção
+de 14 dias. Escrita síncrona, sem filas. Esses logs são operacionais, não uma trilha
+de auditoria transacional: não há atomicidade entre persistência no banco e arquivo.
+Comandos de seed e alterações diretas no banco não passam por esse registro da API.
+
 ## Estado da implementação
 
 - Disponível: saúde, sessão, CRUD, FormRequests, Resource e padronização de exceções.
-- Planejado: filtros, ordenação/per_page configuráveis e logs de operações.
+- Disponível: filtros, ordenação/per_page configuráveis e logs de operações.
 - Testes do contrato usam rotas temporárias exclusivas do processo PHPUnit;
   essas rotas não existem na aplicação em execução.

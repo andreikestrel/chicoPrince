@@ -51,6 +51,14 @@ return [
     */
 
     'channels' => [
+        'products' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/products.log'),
+            'level' => 'info',
+            'days' => 14,
+            'permission' => 0660,
+            'locking' => true,
+        ],
 
         'stack' => [
             'driver' => 'stack',

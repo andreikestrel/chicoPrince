@@ -221,7 +221,13 @@ O [contrato REST](./docs/API.md) descreve rotas, acesso, payloads, paginação,
 parâmetros de filtros e códigos HTTP. ProductResource e o tratamento padronizado
 de exceções estão implementados e testados, assim como as rotas de sessão e CRUD.
 O fluxo de cookies/CSRF está descrito no contrato. Sanctum 4 autentica a sessão web;
-não são usados tokens Bearer. A listagem tem paginação fixa de 15 itens nesta etapa.
+não são usados tokens Bearer. A listagem combina busca, categoria, faixa de preço
+e disponibilidade, com paginação de 1 a 100 itens e ordenação validada.
+
+Operações de escrita registram ação, ID do produto e ID do usuário no canal
+`products`, com rotação diária e retenção de 14 dias. Os arquivos locais
+`backend/storage/logs/products-YYYY-MM-DD.log` não são versionados.
+O registro é síncrono e operacional, sem garantia de auditoria transacional.
 
 ## Verificações
 
@@ -236,7 +242,7 @@ Verificado no ambiente de desenvolvimento:
 
 - Build e inicialização dos três serviços pelo Compose.
 - Migrations iniciais executadas no MySQL.
-- Suíte backend padrão: 23 testes passaram, 140 assertions; o teste específico de
+- Suíte backend padrão: 29 testes passaram, 194 assertions; o teste específico de
   estoque negativo no MySQL é ignorado quando o banco de teste é SQLite.
 - Testes de produtos e seeders executados também em MySQL isolado: 5 passaram,
   26 assertions, incluindo precisão do preço, estoque negativo e repetição da carga.
@@ -247,6 +253,8 @@ Verificado no ambiente de desenvolvimento:
   produto temporário removido ao final. Os testes PHPUnit usam SQLite, onde o
   middleware desabilita CSRF; por isso essa proteção foi verificada por HTTP real.
 - Navegador: estados de erro e sucesso da conexão, incluindo nova tentativa.
+- Filtros combinados e navegação entre páginas verificados no MySQL real via proxy;
+  links usam o host acessível ao navegador. Build frontend passou após o ajuste.
 
 O procedimento foi executado também em uma cópia isolada dos arquivos versionados,
 sem ambiente nem dependências locais copiados, com banco e volumes novos.
@@ -257,8 +265,8 @@ Não foi adicionada suíte automatizada de frontend nesta etapa.
 
 ## Limitações e próximos passos
 
-Ainda faltam filtros combináveis, paginação configurável, ordenação, logs e as respectivas
-interfaces. O formato de erros e o Resource de produtos estão preparados;
+Ainda faltam as interfaces do catálogo e gerenciamento, a revisão consolidada
+dos testes essenciais e o polimento da entrega. O formato de erros e o Resource de produtos estão preparados;
 o endpoint de saúde mantém seu formato explícito de diagnóstico.
 
 Importação externa, filas, monitoramento e Elasticsearch não estão implementados.
