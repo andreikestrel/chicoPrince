@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\SaveBannerRequest;
 use App\Http\Resources\BannerResource;
 use App\Models\Banner;
-use App\Models\Product;
+use App\Models\CatalogCategory;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 
@@ -15,7 +15,7 @@ class BannerController extends Controller
     {
         return BannerResource::collection(
             Banner::where('active', true)
-                ->whereIn('category', Product::select('category'))
+                ->whereIn('category', CatalogCategory::all()->pluck('name'))
                 ->orderBy('position')->orderBy('id')->limit(20)->get()
         );
     }

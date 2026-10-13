@@ -13,6 +13,27 @@ class BootstrapCatalogTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_category_backfill_preserves_edits_stock_and_existing_paths(): void
+    {
+        $sample = $this->sample();
+        $product = Product::factory()->create(['name' => 'Edição humana', 'stock' => 7]);
+        $product->forceFill(['source_url' => $sample['source_url'], 'import_key' => hash('sha256', $sample['source_url'])])->save();
+        $file = tempnam(sys_get_temp_dir(), 'categories-');
+        try {
+            file_put_contents($file, json_encode([$sample]));
+            $this->artisan('catalog:categories', ['file' => $file])->assertSuccessful();
+            $this->assertSame($sample['category_path'], $product->fresh()->category_path);
+            $this->assertSame('Edição humana', $product->fresh()->name);
+            $this->assertSame(7, $product->fresh()->stock);
+            $sample['category_path'] = ['Outra'];
+            file_put_contents($file, json_encode([$sample]));
+            $this->artisan('catalog:categories', ['file' => $file])->assertSuccessful();
+            $this->assertNotSame(['Outra'], $product->fresh()->category_path);
+        } finally {
+            unlink($file);
+        }
+    }
+
     protected function setUp(): void
     {
         parent::setUp();

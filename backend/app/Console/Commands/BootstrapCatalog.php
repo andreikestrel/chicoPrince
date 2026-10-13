@@ -105,6 +105,7 @@ class BootstrapCatalog extends Command
                             'name' => $item['name'], 'description' => $item['description'],
                             'price' => $item['price'], 'image' => $item['image_url'],
                             'category' => ($categories[0] ?? $item['category_path'][0]), 'stock' => 0,
+                            'category_path' => array_values(array_unique($item['category_path'])),
                             'import_key' => hash('sha256', $key), 'source_url' => $key,
                         ];
                         if (count($rows) === $limit) {

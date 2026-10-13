@@ -87,6 +87,20 @@ class CatalogPresentationTest extends TestCase
         $this->getJson('/api/admin/banners?page=2')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('meta.total', 21);
     }
 
+    public function test_banner_can_target_any_imported_category_and_filter_its_products(): void
+    {
+        $product = Product::factory()->create(['category' => 'Camiseta']);
+        $product->forceFill(['category_path' => ['Roupas', 'Camiseta', 'Música']])->save();
+        Product::factory()->create(['category' => 'Canecas']);
+        $this->getJson('/api/categories')->assertOk()->assertJsonFragment(['name' => 'Música', 'slug' => 'musica']);
+        $this->actingAs(User::factory()->create(['is_admin' => true]), 'web');
+        $this->postJson('/api/admin/banners', $this->banner(['category' => 'Música']))->assertCreated();
+        $this->getJson('/api/banners')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.category', 'Música');
+        $this->getJson('/api/products?category_slug=musica')->assertOk()->assertJsonPath('meta.total', 1)->assertJsonPath('data.0.id', $product->id);
+        $this->getJson('/api/products?category=M%C3%BAsica')->assertOk()->assertJsonPath('meta.total', 1);
+        $this->getJson('/api/products?category_slug=musica&min_price=999999')->assertOk()->assertJsonPath('meta.total', 0);
+    }
+
     private function banner(array $override = []): array
     {
         return array_replace(['title' => 'Promoções de calças', 'image' => 'https://example.test/banner.jpg', 'category' => 'Calças', 'position' => 0, 'active' => true], $override);

@@ -10,7 +10,7 @@ class CatalogCategory
     // Categorias continuam sendo os valores existentes nos produtos.
     public static function all(): Collection
     {
-        $names = Product::query()->select('category')->distinct()->orderBy('category')->pluck('category');
+        $names = Product::query()->get(['category', 'category_path'])->flatMap(fn (Product $product) => array_merge([$product->category], $product->category_path ?? []))->unique()->sort()->values();
         $bases = $names->mapWithKeys(fn (string $name) => [$name => Str::slug($name) ?: 'categoria']);
         $counts = $bases->countBy();
         $reserved = ['login', 'conta', 'checkout', 'admin', 'produtos', 'api', 'carrinho'];

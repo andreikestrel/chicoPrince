@@ -30,7 +30,7 @@ class SaveBannerRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'max:120'],
             'image' => ['required', 'url:http,https', 'max:2048'],
-            'category' => ['required', 'string', 'max:100', Rule::exists('products', 'category')],
+            'category' => ['required', 'string', 'max:100', Rule::in(CatalogCategory::all()->pluck('name')->all())],
             'position' => ['required', 'integer', 'min:0', 'max:9999'],
             'active' => ['required', 'boolean'],
         ];

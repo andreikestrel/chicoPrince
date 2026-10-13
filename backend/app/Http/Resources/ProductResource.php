@@ -16,6 +16,7 @@ class ProductResource extends JsonResource
             'image' => $this->image,
             'price' => $this->price,
             'category' => $this->category,
+            'category_path' => $this->category_path ?? [],
             'stock' => $this->stock,
             'demo_variants' => (bool) $this->demo_variants,
             'variants' => $this->whenLoaded('variants', fn () => $this->variants->map(fn ($variant) => [

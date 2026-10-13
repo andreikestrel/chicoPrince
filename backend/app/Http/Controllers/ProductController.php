@@ -29,10 +29,10 @@ class ProductController extends Controller
         if (isset($filters['category_slug'])) {
             $category = CatalogCategory::all()->firstWhere('slug', $filters['category_slug']);
             abort_unless($category, 404);
-            $query->where('category', $category['name']);
+            $query->where(fn ($q) => $q->where('category', $category['name'])->orWhereJsonContains('category_path', $category['name']));
         }
         if (isset($filters['category'])) {
-            $query->where('category', $filters['category']);
+            $query->where(fn ($q) => $q->where('category', $filters['category'])->orWhereJsonContains('category_path', $filters['category']));
         }
         if (isset($filters['min_price'])) {
             $query->where('price', '>=', $filters['min_price']);
