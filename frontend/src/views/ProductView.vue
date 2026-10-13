@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BuyButton from '../components/BuyButton.vue'
 import { onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { api, ApiError } from '../lib/api'
@@ -49,6 +50,7 @@ onBeforeUnmount(() => controller?.abort())
         <h1>{{ product.name }}</h1>
         <p class="detail-price">{{ currency.format(Number(product.price)) }}</p>
         <p :class="{ error: product.stock === 0 }">{{ product.stock > 0 ? `Em estoque: ${product.stock} unidades` : 'Sem estoque' }}</p>
+        <BuyButton :product="product" />
         <h2>Sobre o produto</h2>
         <p class="product-description">{{ product.description }}</p>
       </div>
