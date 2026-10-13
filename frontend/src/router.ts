@@ -5,6 +5,8 @@ export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', name: 'home', component: HomeView, meta: { title: 'Catálogo' } },
+    { path: '/produtos/novo', name: 'product-create', component: () => import('./views/ProductFormView.vue'), meta: { title: 'Criar produto' } },
+    { path: '/produtos/:id/editar', name: 'product-edit', component: () => import('./views/ProductFormView.vue'), meta: { title: 'Editar produto' } },
     { path: '/produtos/:id', name: 'product', component: () => import('./views/ProductView.vue'), meta: { title: 'Detalhe do produto' } },
     { path: '/conta', name: 'account', component: () => import('./views/AccountView.vue'), meta: { title: 'Minha conta' } },
     { path: '/login', name: 'login', component: () => import('./views/LoginView.vue'), meta: { title: 'Entrar' } },

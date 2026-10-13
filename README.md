@@ -10,7 +10,7 @@ as migrations iniciais estão aplicadas e o Vue consulta a saúde da API e do ba
 O modelo e os dados de exemplo estão disponíveis. O contrato REST está documentado;
 a autenticação por sessão e o CRUD da API estão disponíveis. O catálogo público
 oferece busca, filtros combinados, ordenação, paginação e detalhes dos produtos.
-Login e logout estão disponíveis na interface; gerenciamento está em desenvolvimento.
+Login, logout, criação, edição e exclusão estão disponíveis na interface.
 
 ## Stack e arquitetura
 
@@ -260,7 +260,16 @@ Após entrar, a interface abre a conta; ao recarregar, consulta a sessão no ser
 A senha é limpa ao concluir cada tentativa. Usuários autenticados que acessam
 `/login` são encaminhados para `/conta`. Logout atualiza o estado compartilhado.
 
-O gerenciamento será implementado nas próximas etapas. Em produção,
+Usuários autenticados acessam `/produtos/novo` pelo cabeçalho e edição em
+`/produtos/:id/editar` pelo detalhe. Uma única view deriva `isEdit` do ID da rota:
+criação envia POST e edição carrega os dados e envia PATCH. O formulário apresenta
+validações por campo e bloqueia envios duplicados enquanto salva. A imagem é uma
+URL opcional, sem upload. Após criar ou editar com sucesso, a interface retorna
+automaticamente ao catálogo, que consulta os dados atualizados. Falhas mantêm o formulário aberto.
+No detalhe, excluir exige confirmação nativa do navegador; cancelar não envia DELETE.
+A interface exibe sucesso ou erro, e a API exige sessão e CSRF nas três operações.
+
+Em produção,
 o servidor da SPA deverá redirecionar rotas do frontend para index.html, preservando
 as rotas `/api`; o Vite já oferece esse fallback em desenvolvimento.
 
@@ -302,6 +311,9 @@ Verificado no ambiente de desenvolvimento:
   falha de rede; login real com usuário temporário, senha inválida, restauração
   da sessão ao recarregar, redirecionamento de autenticado e logout. O usuário
   temporário foi removido ao final.
+- CRUD pela interface: visitante sem formulário de escrita; criação, erro 422 por
+  campo, edição de preço/estoque, cancelamento e confirmação de exclusão. Produto
+  e usuário temporários removidos ao final.
 
 O procedimento foi executado também em uma cópia isolada dos arquivos versionados,
 sem ambiente nem dependências locais copiados, com banco e volumes novos.
@@ -312,8 +324,9 @@ Não foi adicionada suíte automatizada de frontend nesta etapa.
 
 ## Limitações e próximos passos
 
-Ainda faltam as interfaces de gerenciamento e o polimento da
-entrega. O formato de erros e o Resource de produtos estão preparados;
+Ainda faltam a revisão de responsividade/acessibilidade, segurança e o polimento da
+entrega. Mensagens detalhadas de validação do Laravel ainda usam o idioma padrão
+em inglês. O formato de erros e o Resource de produtos estão preparados;
 o endpoint de saúde mantém seu formato explícito de diagnóstico.
 
 Importação externa, filas, monitoramento e Elasticsearch não estão implementados.

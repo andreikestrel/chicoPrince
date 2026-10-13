@@ -13,6 +13,7 @@ onMounted(refreshSession)
       <nav aria-label="Navegação principal">
         <RouterLink to="/">Catálogo</RouterLink>
         <RouterLink to="/conta">Minha conta</RouterLink>
+        <RouterLink v-if="status === 'authenticated'" to="/produtos/novo">Criar produto</RouterLink>
         <RouterLink v-if="status === 'guest'" to="/login">Entrar</RouterLink>
       </nav>
     </header>
