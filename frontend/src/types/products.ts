@@ -7,6 +7,7 @@ export interface Product {
   image: string | null
   price: string
   category: string
+  demo_variants?: boolean
   variants?: ProductVariant[]
   stock: number
   created_at: string | null

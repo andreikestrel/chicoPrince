@@ -16,6 +16,7 @@ services:
       XDEBUG_MODE: 'off'
     volumes:
       - '.:/var/www/html'
+      - '../scraper/chicorei:/opt/chicorei'
     networks:
       - sail
     depends_on:

@@ -17,6 +17,7 @@ class ProductResource extends JsonResource
             'price' => $this->price,
             'category' => $this->category,
             'stock' => $this->stock,
+            'demo_variants' => (bool) $this->demo_variants,
             'variants' => $this->whenLoaded('variants', fn () => $this->variants->map(fn ($variant) => [
                 'id' => $variant->id,
                 'color' => $variant->color,

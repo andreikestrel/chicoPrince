@@ -53,6 +53,7 @@ onBeforeUnmount(() => controller?.abort())
         <h1>{{ product.name }}</h1>
         <p class="detail-price">{{ currency.format(Number(product.price)) }}</p>
         <p :class="{ error: product.stock === 0 }">{{ product.stock > 0 ? `Em estoque: ${product.stock} unidades` : 'Sem estoque' }}</p>
+        <p v-if="product.demo_variants" role="note">Tamanhos e estoque demonstrativos para teste de compra.</p>
         <BuyButton :product="product" />
         <h2>Sobre o produto</h2>
         <p class="product-description">{{ product.description }}</p>
