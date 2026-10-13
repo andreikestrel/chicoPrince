@@ -45,9 +45,9 @@ function changePage(page: number) {
 
 <template>
   <section class="catalog-intro" aria-labelledby="catalog-title">
-    <p class="eyebrow">Encontre o seu próximo favorito</p>
-    <h1 id="catalog-title">Pequenas escolhas.<br />Muita personalidade.</h1>
-    <p class="description">Explore nosso catálogo e encontre algo que combine com você.</p>
+    <h1 id="catalog-title">Vista sua própria história.</h1>
+    <p class="description">Todo príncipe e toda princesa têm seu estilo.<br />O seu começa aqui.</p>
+    <p class="description">Explore nosso catálogo e encontre peças dignas da sua personalidade.</p>
   </section>
   <CouponNotice />
   <CatalogCarousel />
