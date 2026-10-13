@@ -29,7 +29,7 @@ services:
     environment:
       API_PROXY_TARGET: http://laravel.test
     ports:
-      - '127.0.0.1:5173:5173'
+      - '127.0.0.1:${FRONTEND_PORT:-5173}:5173'
     volumes:
       - '../frontend:/app'
       - 'frontend-node-modules:/app/node_modules'

@@ -89,9 +89,9 @@ Aguarde o servidor iniciar após o restart. Use `--user sail` nos comandos Artis
 para manter os arquivos gerados acessíveis ao processo web. No WSL/Linux, também
 é possível usar `./vendor/bin/sail` dentro de [backend/](./backend/).
 
-As migrations atuais criam as tabelas iniciais do Laravel. Migrations e seeders de
-produtos ainda não foram implementados; não há catálogo de exemplo nem credencial
-de login disponível nesta etapa.
+As migrations criam as tabelas iniciais do Laravel e a tabela de produtos.
+Os seeders de produtos ainda não foram implementados; não há catálogo de exemplo
+nem credencial de login disponível nesta etapa.
 
 ### 4. Acessar
 
@@ -118,6 +118,7 @@ Os exemplos versionados documentam a configuração sem segredos:
 |---|---|
 | `APP_KEY` | Chave gerada pelo script de ambiente |
 | `APP_URL` / `APP_PORT` | URL local / porta 8081 |
+| `FRONTEND_PORT` | Porta publicada pelo Compose para o Vue, padrão 5173 |
 | `APP_DEBUG` | `false`, para evitar exposição de detalhes internos |
 | `DB_CONNECTION` / `DB_HOST` / `DB_PORT` | `mysql` / `mysql` / `3306` |
 | `DB_DATABASE` / `DB_USERNAME` | Banco e usuário `chico_prince` |
@@ -143,6 +144,56 @@ armazenada no banco; as duas precisam ser atualizadas de forma coordenada.
 - A base usa recursos nativos do Laravel e `fetch` no Vue, sem camadas extras para
   a consulta simples de saúde.
 
+## Modelo de produtos
+
+O [modelo Product](./backend/app/Models/Product.php) usa a tabela `products`:
+
+| Campo | Armazenamento / regra |
+|---|---|
+| `id` | Identificador inteiro gerado pelo banco |
+| `name` | Texto obrigatório, até 255 caracteres |
+| `description` | Texto longo obrigatório |
+| `image` | URL opcional, até 2048 caracteres; sem upload nesta etapa |
+| `price` | `DECIMAL(10,2)`, lido como string com duas casas para preservar precisão |
+| `category` | Texto obrigatório, até 100 caracteres, com índice para filtragem |
+| `stock` | Inteiro sem sinal no MySQL, padrão zero |
+| `created_at` / `updated_at` | Datas administradas pelo Eloquent |
+
+Categoria como texto evita uma entidade de gerenciamento sem necessidade atual.
+O campo de imagem armazena somente o endereço; não baixa arquivos externos.
+Validação de URL, preço não negativo e demais entradas será feita com FormRequests
+na etapa de CRUD. Ainda não existem endpoints públicos de produtos.
+
+## Operação do ambiente
+
+Todos os comandos partem da raiz do repositório:
+
+```sh
+# Iniciar novamente; --build é necessário quando a imagem mudar
+docker compose -f backend/compose.yaml up -d
+# Parar mantendo containers e volumes
+docker compose -f backend/compose.yaml stop
+# Remover containers e rede, preservando os dados
+docker compose -f backend/compose.yaml down
+# Consultar logs recentes
+docker compose -f backend/compose.yaml logs --tail=100
+# Abrir shell no backend ou no frontend
+docker compose -f backend/compose.yaml exec --user sail laravel.test bash
+docker compose -f backend/compose.yaml exec frontend sh
+# Aplicar migrations pendentes
+docker compose -f backend/compose.yaml exec --user sail laravel.test php artisan migrate
+```
+
+Para recriar as tabelas **apagando todos os dados do banco local**, use somente
+quando esse descarte for intencional:
+
+```sh
+docker compose -f backend/compose.yaml exec --user sail laravel.test php artisan migrate:fresh
+```
+
+Esse reset não popula produtos; os seeders de domínio ainda serão implementados.
+Não use `down -v` no fluxo normal: ele remove também os volumes persistentes.
+
 ## Verificações
 
 ```sh
@@ -156,17 +207,25 @@ Verificado no ambiente de desenvolvimento:
 
 - Build e inicialização dos três serviços pelo Compose.
 - Migrations iniciais executadas no MySQL.
-- Suíte backend: 4 testes e 7 assertions, usando SQLite isolado nos testes.
+- Suíte backend padrão: 6 testes passaram, 18 assertions; o teste específico de
+  estoque negativo no MySQL é ignorado quando o banco de teste é SQLite.
+- Testes de produtos executados também em MySQL isolado: 3 passaram, 13 assertions,
+  incluindo precisão do preço e rejeição de estoque negativo pelo banco.
+- Reversão e reaplicação da migration de produtos verificadas no banco isolado.
 - TypeScript e build Vite executados no container Node.
 - HTTP 200 nas rotas de saúde e no proxy do Vite, com consulta real ao MySQL.
 - Navegador: estados de erro e sucesso da conexão, incluindo nova tentativa.
 
-A instalação integral em uma máquina limpa ainda precisa ser validada.
+O procedimento foi executado também em uma cópia isolada dos arquivos versionados,
+sem ambiente nem dependências locais copiados, com banco e volumes novos.
+Foram verificados bootstrap, migrations, build, HTTP, reset do banco descartável e
+persistência após `down` seguido de `up`. O cache de imagens Docker foi reutilizado;
+isso não equivale a testar em outro computador ou sem cache de imagens.
 Não foi adicionada suíte automatizada de frontend nesta etapa.
 
 ## Limitações e próximos passos
 
-Ainda faltam os requisitos de domínio: produtos e seeders, autenticação,
+Ainda faltam os requisitos de domínio: seeders, autenticação,
 FormRequests, CRUD, filtros combináveis, paginação, ordenação, logs e as respectivas
 interfaces. A padronização geral dos erros e respostas será definida junto ao
 contrato da API; o endpoint de saúde já possui formato explícito.
