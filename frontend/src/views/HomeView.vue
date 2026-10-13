@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import CouponNotice from '../components/CouponNotice.vue'
 import CatalogCarousel from '../components/CatalogCarousel.vue'
 import { useCategories, catalogLocation } from '../composables/useCategories'
 import { useProducts } from '../composables/useProducts'
@@ -38,6 +39,7 @@ function changePage(page: number) {
     <h1 id="catalog-title">Pequenas escolhas.<br />Muita personalidade.</h1>
     <p class="description">Explore nosso catálogo e encontre algo que combine com você.</p>
   </section>
+  <CouponNotice />
   <CatalogCarousel />
   <ProductFilters :query="filterForm" @apply="applyFilters" @clear="applyFilters({})" />
   <section class="catalog-results" aria-label="Produtos" :aria-busy="loading">

@@ -5,7 +5,7 @@ import { useRoute } from 'vue-router'
 import { useCart } from './composables/useCart'
 import { useAuth } from './composables/useAuth'
 
-const { refreshSession, status } = useAuth()
+const { refreshSession, status, user } = useAuth()
 const route = useRoute()
 const { count, openDrawer } = useCart()
 onMounted(refreshSession)
@@ -25,7 +25,7 @@ watch(() => route.path, async () => {
         <RouterLink to="/">Catálogo</RouterLink>
 
         <RouterLink to="/conta">Minha conta</RouterLink>
-        <RouterLink v-if="status === 'authenticated'" to="/admin/products">Gerenciar produtos</RouterLink>
+        <RouterLink v-if="status === 'authenticated' && user?.is_admin" to="/admin/products">Gerenciar produtos</RouterLink>
         <RouterLink v-if="status === 'guest'" to="/login">Entrar</RouterLink>
       </nav>
     </header>

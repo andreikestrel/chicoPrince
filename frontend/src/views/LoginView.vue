@@ -1,10 +1,15 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
-import { ApiError } from '../lib/api'
+import { api, ApiError } from '../lib/api'
 
 const router = useRouter()
+const route = useRoute()
+const demoAccounts = ref<{ label: string; email: string; password: string }[]>([])
+onMounted(async () => {
+  try { demoAccounts.value = (await api.get('/demo-accounts')).data.data } catch { /* Fora da demonstração, a caixa não é exibida. */ }
+})
 const { status, login } = useAuth()
 const email = ref('')
 const password = ref('')
@@ -12,8 +17,13 @@ const busy = ref(false)
 const message = ref('')
 const details = ref<Record<string, string[]>>({})
 
+let redirecting = false
 watch(status, value => {
-  if (value === 'authenticated') router.replace({ name: 'account' })
+  if (value === 'authenticated' && !redirecting) {
+    redirecting = true
+    void router.replace(route.query.redirect === '/checkout' ? '/checkout' : { name: 'account' })
+      .finally(() => { redirecting = false })
+  }
 }, { immediate: true })
 
 async function signIn() {
@@ -52,6 +62,15 @@ async function signIn() {
       <p v-if="details.password" id="password-error" class="error">{{ details.password.join(' ') }}</p>
       <button type="submit" :disabled="busy">{{ busy ? 'Entrando…' : 'Entrar' }}</button>
     </form>
+    <aside v-if="demoAccounts.length" class="demo-accounts" aria-label="Contas de demonstração">
+      <h2>Contas para testar</h2>
+      <p>Ambiente demonstrativo do projeto.</p>
+      <div v-for="account in demoAccounts" :key="account.email">
+        <strong>{{ account.label }}</strong>
+        <p>{{ account.email }}<br />Senha: <code>{{ account.password }}</code></p>
+        <button type="button" class="secondary" :disabled="busy" @click="email = account.email; password = account.password">Usar {{ account.label.toLowerCase() }}</button>
+      </div>
+    </aside>
     <RouterLink class="back-link" to="/">Continuar explorando o catálogo</RouterLink>
   </section>
 </template>

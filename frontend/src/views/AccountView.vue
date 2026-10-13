@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 
+const route = useRoute()
 const { user, status, error, refreshSession, logout } = useAuth()
 const busy = ref(false)
 const actionError = ref('')
@@ -19,6 +21,7 @@ async function signOut() {
   <section class="intro" aria-labelledby="account-title">
     <p class="eyebrow">Seu espaço</p>
     <h1 id="account-title">Minha conta</h1>
+    <p v-if="route.query.denied" role="alert">O gerenciamento de produtos é exclusivo de administradores.</p>
     <div role="status" aria-live="polite">
       <p v-if="status === 'loading'">Consultando sua sessão…</p>
       <template v-else-if="status === 'authenticated' && user">

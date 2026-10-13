@@ -12,8 +12,8 @@ import SortableHeader from '../components/SortableHeader.vue'
 
 const route = useRoute()
 const router = useRouter()
-const { status, refreshSession } = useAuth()
-const authenticated = computed(() => status.value === 'authenticated')
+const { status, refreshSession, user } = useAuth()
+const authenticated = computed(() => status.value === 'authenticated' && !!user.value?.is_admin)
 const { result, loading, error, fetchProducts } = useProducts(authenticated)
 const selected = ref<number[]>([])
 const inspecting = ref(false)

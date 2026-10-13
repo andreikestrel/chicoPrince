@@ -192,3 +192,8 @@ button.text-button:hover:not(:disabled) { background: #e7ebdf; }
 .banner-list { padding: 0; list-style: none; }
 .banner-list > li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 0; border-top: 1px solid #c7d0c2; overflow-wrap: anywhere; }
 @media (max-width: 600px) { .quick-search { flex-wrap: wrap; gap: 8px; } .quick-search > input { flex-basis: 100%; } .quick-search > button { flex: 1; padding: 10px; } .banner-form fieldset { grid-template-columns: 1fr; } .banner-list > li { flex-direction: column; align-items: start; } .banner-caption { padding: 16px; } }
+.coupon-notice { padding: 14px 18px; border: 1px solid #c7d0c2; border-radius: 10px; background: #e7ebdf; line-height: 1.6; margin: 20px 0; overflow-wrap: anywhere; }
+.coupon-form { padding: 18px 0; border-block: 1px solid #c7d0c2; }
+.coupon-form > label { display: block; margin-bottom: 8px; }
+.coupon-form input { min-width: 0; flex: 1; width: 100%; }
+.demo-accounts { margin: 24px 0; padding: 20px; border: 1px solid #c7d0c2; border-radius: 12px; background: #e7ebdf; overflow-wrap: anywhere; } .demo-accounts > div + div { margin-top: 20px; }

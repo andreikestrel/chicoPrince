@@ -16,7 +16,7 @@ class ProductLogsTest extends TestCase
 
     public function test_successful_writes_log_only_action_and_identifiers(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['is_admin' => true]);
         $logger = Mockery::mock(LoggerInterface::class);
         Log::shouldReceive('channel')->with('products')->times(3)->andReturn($logger);
         $logger->shouldReceive('info')->once()->with('product.created', Mockery::on(fn ($context) => array_keys($context) === ['product_id', 'user_id'] && $context['user_id'] === $user->id));
@@ -34,7 +34,7 @@ class ProductLogsTest extends TestCase
         Log::shouldReceive('channel')->with('products')->never();
         $product = Product::factory()->create();
         $this->deleteJson('/api/products/'.$product->id)->assertUnauthorized();
-        $this->actingAs(User::factory()->create(), 'web');
+        $this->actingAs(User::factory()->create(['is_admin' => true]), 'web');
         $this->patchJson('/api/products/'.$product->id, ['stock' => -1])->assertUnprocessable();
         $this->deleteJson('/api/products/999999')->assertNotFound();
     }

@@ -10,7 +10,7 @@ import type { Product } from '../types/products'
 const route = useRoute()
 const router = useRouter()
 const { load: reloadCategories } = useCategories()
-const { status, refreshSession } = useAuth()
+const { status, refreshSession, user } = useAuth()
 const isEdit = computed(() => route.params.id !== undefined)
 const empty = { name: '', description: '', image: '', price: '', category: '', stock: '0' }
 const form = reactive({ ...empty })
@@ -36,7 +36,7 @@ async function load() {
   message.value = ''
   errors.value = {}
   loading.value = false
-  if (!isEdit.value || status.value !== 'authenticated') return
+  if (!isEdit.value || (status.value !== 'authenticated' || !user.value?.is_admin)) return
   loading.value = true
   try {
     const { data } = await api.get<{ data: Product }>(`/products/${encodeURIComponent(String(route.params.id))}`, { signal: request.signal })
@@ -54,7 +54,7 @@ async function load() {
 }
 
 async function save() {
-  if (busy.value || loading.value || status.value !== 'authenticated') return
+  if (busy.value || loading.value || (status.value !== 'authenticated' || !user.value?.is_admin)) return
   const current = generation
   const editing = isEdit.value
   const id = String(route.params.id)
@@ -89,7 +89,7 @@ onBeforeUnmount(() => { generation++; controller?.abort() })
     <RouterLink class="back-link" :to="{ name: 'admin-products', query: route.query }">← Voltar aos produtos</RouterLink>
     <h1 id="editor-title">{{ isEdit ? 'Editar produto' : 'Criar produto' }}</h1>
     <p v-if="status === 'loading'" role="status">Consultando sua sessão…</p>
-    <div v-else-if="status !== 'authenticated'">
+    <div v-else-if="status !== 'authenticated' || !user?.is_admin">
       <p>Entre na sua conta para gerenciar produtos.</p>
       <RouterLink class="back-link" to="/login">Entrar na conta</RouterLink>
       <button v-if="status === 'error'" @click="refreshSession">Verificar sessão</button>

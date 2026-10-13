@@ -50,6 +50,13 @@ function quantity(id: number, value: number) {
 }
 function remove(id: number) { items.value = items.value.filter(item => item.variantId !== id) }
 function clear() { items.value = [] }
+function consume(purchased: { variant_id: number; quantity: number }[]) {
+  for (const row of purchased) {
+    const item = items.value.find(item => item.variantId === row.variant_id)
+    if (item) item.quantity = Math.max(0, item.quantity - row.quantity)
+  }
+  items.value = items.value.filter(item => item.quantity > 0)
+}
 async function refresh() {
   if (pending) return pending
   loading.value = true
@@ -75,5 +82,5 @@ async function refresh() {
   return pending
 }
 export function useCart() {
-  return { drawerOpen: readonly(drawerOpen), openDrawer, closeDrawer, items: readonly(items), count, total, ready, loading: readonly(loading), warning: readonly(warning), add, quantity, remove, clear, refresh }
+  return { drawerOpen: readonly(drawerOpen), openDrawer, closeDrawer, items: readonly(items), count, total, ready, loading: readonly(loading), warning: readonly(warning), add, quantity, remove, clear, consume, refresh }
 }

@@ -1,3 +1,4 @@
+import { useAuth } from './composables/useAuth'
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from './views/HomeView.vue'
 
@@ -18,6 +19,15 @@ export const router = createRouter({
     { path: '/:pathMatch(.*)*', name: 'not-found', component: () => import('./views/NotFoundView.vue'), meta: { title: 'Página não encontrada' } },
   ],
   scrollBehavior: () => ({ top: 0 }),
+})
+
+router.beforeEach(async to => {
+  const admin = to.path.startsWith('/admin/')
+  if (to.name !== 'checkout' && !admin) return
+  const auth = useAuth()
+  await auth.refreshSession()
+  if (auth.status.value !== 'authenticated') return { name: 'login', query: { redirect: to.fullPath } }
+  if (admin && !auth.user.value?.is_admin) return { name: 'account', query: { denied: '1' } }
 })
 
 router.afterEach(to => { document.title = `${String(to.meta.title)} · Chico Prince` })

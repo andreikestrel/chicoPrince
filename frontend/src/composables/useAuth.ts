@@ -1,7 +1,7 @@
 import { readonly, ref } from 'vue'
 import { api, ApiError, prepareCsrf } from '../lib/api'
 
-interface User { id: number; name: string; email: string }
+interface User { id: number; name: string; email: string; is_admin: boolean }
 const user = ref<User | null>(null)
 const status = ref<'loading' | 'authenticated' | 'guest' | 'error'>('loading')
 const error = ref('')

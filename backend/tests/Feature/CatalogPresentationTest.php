@@ -61,7 +61,7 @@ class CatalogPresentationTest extends TestCase
     public function test_authenticated_banner_crud_validates_image_and_category(): void
     {
         Product::factory()->create(['category' => 'Calças']);
-        $this->actingAs(User::factory()->create(), 'web');
+        $this->actingAs(User::factory()->create(['is_admin' => true]), 'web');
         $created = $this->postJson('/api/admin/banners', $this->banner(['category' => 'calças']))->assertCreated()->assertJsonPath('data.category', 'Calças');
         $id = $created->json('data.id');
         foreach ([
@@ -83,7 +83,7 @@ class CatalogPresentationTest extends TestCase
             Banner::create($this->banner(['position' => $i]));
         }
         $this->getJson('/api/banners')->assertOk()->assertJsonCount(20, 'data');
-        $this->actingAs(User::factory()->create(), 'web');
+        $this->actingAs(User::factory()->create(['is_admin' => true]), 'web');
         $this->getJson('/api/admin/banners?page=2')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('meta.total', 21);
     }
 

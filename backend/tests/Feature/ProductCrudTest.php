@@ -30,7 +30,7 @@ class ProductCrudTest extends TestCase
 
     public function test_authenticated_user_can_create_patch_replace_and_delete(): void
     {
-        $this->actingAs(User::factory()->create(), 'web');
+        $this->actingAs(User::factory()->create(['is_admin' => true]), 'web');
         $created = $this->postJson('/api/products', $this->payload() + ['id' => 999, 'unexpected' => 'ignored'])
             ->assertCreated()->assertJsonPath('data.stock', 0)->assertJsonPath('data.image', null)
             ->assertJsonPath('data.price', '59.90');
@@ -48,7 +48,7 @@ class ProductCrudTest extends TestCase
     public function test_invalid_values_do_not_modify_product(): void
     {
         $product = Product::factory()->create(['stock' => 4, 'price' => '10.00']);
-        $this->actingAs(User::factory()->create(), 'web');
+        $this->actingAs(User::factory()->create(['is_admin' => true]), 'web');
         $this->patchJson('/api/products/'.$product->id, ['stock' => -1, 'price' => '1.234', 'image' => 'javascript:alert(1)', 'name' => ''])
             ->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['stock', 'price', 'image', 'name']]]);
         $this->assertSame(4, $product->fresh()->stock);
@@ -61,7 +61,7 @@ class ProductCrudTest extends TestCase
         Product::factory()->count(16)->create();
         $this->getJson('/api/products')->assertOk()->assertJsonCount(15, 'data')->assertJsonPath('meta.total', 16);
         $this->getJson('/api/products?page=2')->assertOk()->assertJsonCount(1, 'data');
-        $this->actingAs(User::factory()->create(), 'web');
+        $this->actingAs(User::factory()->create(['is_admin' => true]), 'web');
         $this->patchJson('/api/products/999999', ['stock' => 1])->assertNotFound();
         $this->deleteJson('/api/products/999999')->assertNotFound();
     }

@@ -14,7 +14,7 @@ class AuthTest extends TestCase
     {
         $user = User::factory()->create();
         $this->postJson('/api/login', ['email' => $user->email, 'password' => 'password'])
-            ->assertOk()->assertExactJson(['data' => $user->only('id', 'name', 'email')]);
+            ->assertOk()->assertExactJson(['data' => $user->fresh()->only('id', 'name', 'email', 'is_admin')]);
         $this->assertAuthenticatedAs($user, 'web');
         $this->getJson('/api/user')->assertOk()->assertJsonPath('data.id', $user->id);
         $this->postJson('/api/logout')->assertNoContent();

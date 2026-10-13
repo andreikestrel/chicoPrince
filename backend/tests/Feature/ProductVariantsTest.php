@@ -13,7 +13,7 @@ class ProductVariantsTest extends TestCase
 
     public function test_variants_are_saved_atomically_with_stock_sum_and_stable_ids(): void
     {
-        $this->actingAs(User::factory()->create(), 'web');
+        $this->actingAs(User::factory()->create(['is_admin' => true]), 'web');
         $product = Product::factory()->create(['stock' => 25]);
         $payload = ['variants' => [
             ['color' => 'azul', 'size' => 'p', 'stock' => 3],
@@ -34,7 +34,7 @@ class ProductVariantsTest extends TestCase
 
     public function test_duplicate_or_incomplete_combinations_do_not_change_product(): void
     {
-        $this->actingAs(User::factory()->create(), 'web');
+        $this->actingAs(User::factory()->create(['is_admin' => true]), 'web');
         $product = Product::factory()->create(['stock' => 25, 'name' => 'Original']);
         foreach ([
             [['color' => ' Azul ', 'size' => 'p', 'stock' => 3], ['color' => 'AZUL', 'size' => 'P', 'stock' => 1]],
@@ -57,7 +57,7 @@ class ProductVariantsTest extends TestCase
         $this->patchJson('/api/products/'.$product->id, ['variants' => []])->assertUnauthorized();
         $this->getJson('/api/products/'.$product->id)->assertOk()->assertJsonCount(0, 'data.variants');
         $this->assertSame(4, $product->fresh()->stock);
-        $this->actingAs(User::factory()->create(), 'web');
+        $this->actingAs(User::factory()->create(['is_admin' => true]), 'web');
         $response = $this->postJson('/api/products', [
             'name' => 'New', 'description' => 'Description', 'price' => '19.90', 'category' => 'Shirts',
             'variants' => [['color' => 'BLACK', 'size' => 'L', 'stock' => 2]],

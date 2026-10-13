@@ -32,7 +32,7 @@ class DatabaseSeederTest extends TestCase
         $this->seed(DatabaseSeeder::class);
 
         $this->assertDatabaseCount('products', 24);
-        $this->assertDatabaseCount('users', 1);
+        $this->assertDatabaseCount('users', 3);
         $this->assertSame(99, Product::firstOrFail()->stock);
         $this->assertSame($hash, $user->fresh()->password);
     }
