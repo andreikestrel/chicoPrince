@@ -1,9 +1,9 @@
 import { onBeforeUnmount, ref, watch, type Ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, type LocationQuery } from 'vue-router'
 import { api, ApiError } from '../lib/api'
 import type { ProductPage } from '../types/products'
 
-export function useProducts(enabled: Ref<boolean> = ref(true)) {
+export function useProducts(enabled: Ref<boolean> = ref(true), filters?: Ref<LocationQuery>) {
   const route = useRoute()
   const routeName = route.name
   const result = ref<ProductPage | null>(null)
@@ -12,7 +12,8 @@ export function useProducts(enabled: Ref<boolean> = ref(true)) {
   let controller: AbortController | undefined
 
   async function fetchProducts() {
-    if (route.name !== routeName) return
+    const catalogRoute = ['home', 'category'].includes(String(routeName)) && ['home', 'category'].includes(String(route.name))
+    if (route.name !== routeName && !catalogRoute) return
     controller?.abort()
     if (!enabled.value) { result.value = null; loading.value = false; return }
     const request = new AbortController()
@@ -20,8 +21,8 @@ export function useProducts(enabled: Ref<boolean> = ref(true)) {
     loading.value = true
     error.value = null
     const params: Record<string, string> = {}
-    for (const key of ['search', 'category', 'min_price', 'max_price', 'in_stock', 'sort', 'direction', 'per_page', 'page']) {
-      const value = route.query[key]
+    for (const key of ['search', 'category', 'category_slug', 'min_price', 'max_price', 'in_stock', 'sort', 'direction', 'per_page', 'page']) {
+      const value = (filters?.value ?? route.query)[key]
       const first = Array.isArray(value) ? value[0] : value
       if (first != null) params[key] = first
     }
@@ -34,7 +35,7 @@ export function useProducts(enabled: Ref<boolean> = ref(true)) {
       if (!request.signal.aborted) loading.value = false
     }
   }
-  watch([() => route.query, enabled], fetchProducts, { immediate: true })
+  watch([() => filters?.value ?? route.query, enabled], fetchProducts, { immediate: true })
   onBeforeUnmount(() => controller?.abort())
   return { result, loading, error, fetchProducts }
 }

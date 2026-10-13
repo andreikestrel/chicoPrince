@@ -1,19 +1,34 @@
 <script setup lang="ts">
+import { computed, onMounted, ref } from 'vue'
+import CatalogCarousel from '../components/CatalogCarousel.vue'
+import { useCategories, catalogLocation } from '../composables/useCategories'
 import { useProducts } from '../composables/useProducts'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter, type LocationQuery } from 'vue-router'
 import ProductPagination from '../components/ProductPagination.vue'
 import ProductCard from '../components/ProductCard.vue'
 import ProductFilters from '../components/ProductFilters.vue'
 
 const route = useRoute()
 const router = useRouter()
-const { result, loading, error, fetchProducts } = useProducts()
+const { categories, load } = useCategories()
+onMounted(() => load(true))
+const filters = computed<LocationQuery>(() => {
+  const query = { ...route.query }
+  if (route.params.categorySlug) {
+    delete query.category
+    query.category_slug = String(route.params.categorySlug)
+  }
+  return query
+})
+const filterForm = computed(() => ({ ...route.query, ...(route.params.categorySlug ? { category: categories.value.find(category => category.slug === route.params.categorySlug)?.name ?? String(route.params.categorySlug) } : {}) }))
+const { result, loading, error, fetchProducts } = useProducts(ref(true), filters)
 
-function applyFilters(query: Record<string, string>) {
-  router.push({ name: 'home', query })
+async function applyFilters(query: Record<string, string>) {
+  await load()
+  router.push(catalogLocation(query))
 }
 function changePage(page: number) {
-  router.push({ name: 'home', query: { ...route.query, page: String(page) } })
+  router.push({ name: route.params.categorySlug ? 'category' : 'home', params: route.params.categorySlug ? { categorySlug: route.params.categorySlug } : {}, query: { ...route.query, page: String(page) } })
 }
 </script>
 
@@ -23,11 +38,12 @@ function changePage(page: number) {
     <h1 id="catalog-title">Pequenas escolhas.<br />Muita personalidade.</h1>
     <p class="description">Explore nosso catálogo e encontre algo que combine com você.</p>
   </section>
-  <ProductFilters :query="route.query" @apply="applyFilters" @clear="applyFilters({})" />
+  <CatalogCarousel />
+  <ProductFilters :query="filterForm" @apply="applyFilters" @clear="applyFilters({})" />
   <section class="catalog-results" aria-label="Produtos" :aria-busy="loading">
     <p v-if="loading && !result" class="catalog-message" role="status">Carregando produtos…</p>
     <div v-else-if="error" class="catalog-message" role="alert">
-      <h2>Não foi possível carregar os produtos</h2>
+      <h2>{{ error.status === 404 ? 'Categoria não encontrada.' : 'Não foi possível carregar os produtos' }}</h2>
       <p>{{ error.message }}</p>
       <ul v-if="Object.keys(error.details).length"><li v-for="(messages, field) in error.details" :key="field">{{ messages.join(' ') }}</li></ul>
       <button @click="fetchProducts">Tentar novamente</button>

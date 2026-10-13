@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ListProductsRequest;
 use App\Http\Requests\SaveProductRequest;
 use App\Http\Resources\ProductResource;
+use App\Models\CatalogCategory;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -25,6 +26,11 @@ class ProductController extends Controller
             $query->whereRaw("name LIKE ? ESCAPE '!'", ['%'.$search.'%']);
         }
 
+        if (isset($filters['category_slug'])) {
+            $category = CatalogCategory::all()->firstWhere('slug', $filters['category_slug']);
+            abort_unless($category, 404);
+            $query->where('category', $category['name']);
+        }
         if (isset($filters['category'])) {
             $query->where('category', $filters['category']);
         }

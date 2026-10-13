@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import BuyButton from '../components/BuyButton.vue'
-import { onBeforeUnmount, ref, watch } from 'vue'
+import { catalogLocation, useCategories } from '../composables/useCategories'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { api, ApiError } from '../lib/api'
 import ProductImage from '../components/ProductImage.vue'
 import type { Product } from '../types/products'
 
 const route = useRoute()
+const { load: loadCategories } = useCategories()
+onMounted(() => loadCategories())
 const product = ref<Product | null>(null)
 const loading = ref(true)
 const error = ref<ApiError | null>(null)
@@ -36,7 +39,7 @@ onBeforeUnmount(() => controller?.abort())
 
 <template>
   <section class="product-detail" aria-label="Detalhe do produto" :aria-busy="loading">
-    <RouterLink class="back-link" :to="{ name: 'home', query: route.query }">← Voltar ao catálogo</RouterLink>
+    <RouterLink class="back-link" :to="catalogLocation(route.query)">← Voltar ao catálogo</RouterLink>
     <p v-if="loading" role="status">Carregando produto…</p>
     <div v-else-if="error" class="catalog-message" role="alert">
       <h1>{{ error.status === 404 ? 'Produto não encontrado' : 'Não foi possível carregar o produto' }}</h1>

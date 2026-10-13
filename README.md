@@ -347,7 +347,9 @@ Não foi adicionada suíte automatizada de frontend nesta etapa.
 ## Limitações e próximos passos
 
 Ainda falta o polimento final da entrega.
-Carrinho, compra e checkout estão planejados, ainda não implementados.
+Carrinho lateral e seleção obrigatória de cor/tamanho no detalhe estão implementados.
+O checkout possui endereço, consulta de CEP e resumo; criação de pedidos, frete,
+descontos e pagamento ainda não estão implementados.
 Mensagens detalhadas de validação do Laravel ainda usam o idioma padrão
 em inglês. O formato de erros e o Resource de produtos estão preparados;
 o endpoint de saúde mantém seu formato explícito de diagnóstico.
@@ -355,3 +357,36 @@ o endpoint de saúde mantém seu formato explícito de diagnóstico.
 Importação externa, filas, monitoramento e Elasticsearch não estão implementados.
 São opcionais e ficam subordinados à conclusão dos requisitos obrigatórios.
 Nenhum serviço externo de produtos é necessário para executar a base atual.
+
+## Carrinho e variações
+
+O botão flutuante abre o carrinho lateral. Comprar aparece somente no detalhe,
+após selecionar cor e tamanho. IDs de produto/variação e quantidades persistem no
+navegador; preços e disponibilidade são consultados novamente na API. O carrinho
+é compartilhado entre sessões nesse navegador, sem sincronização entre dispositivos.
+Totais locais são informativos; a finalização de pedidos ainda está em desenvolvimento.
+
+O painel permite cadastrar combinações de cor/tamanho e estoque. O estoque total
+é calculado a partir delas, enquanto preço e imagem são compartilhados. Execute
+as migrations pendentes ao atualizar a instalação. Produtos anteriores permanecem
+intactos e precisam de variações cadastradas para habilitar Comprar.
+A tela /checkout permite revisar itens e preencher endereço, com consulta ao
+[ViaCEP](https://viacep.com.br/) e preenchimento manual quando o serviço falha.
+## Busca e banners do catálogo
+
+A busca inicial exibe somente o campo de nome e as ações Buscar/Busca avançada.
+Filtros adicionais podem ser expandidos; categorias cadastradas aparecem como sugestões.
+Selecionar uma categoria abre seu caminho no catálogo (por exemplo, /calcas);
+texto, preço, ordem e paginação permanecem nos parâmetros da URL. Histórico,
+recarregamento e retorno do detalhe preservam a consulta.
+
+Em Gerenciar produtos, a seção de banners permite configurar imagem por URL,
+texto, categoria de destino, ordem e ativação. O carrossel manual exibe até 20
+banners ativos; cada clique aplica o filtro correspondente. Sem banners cadastrados,
+a seção não aparece. Não há upload de imagens nem descontos automáticos.
+Categorias derivam dos produtos: renomear/remover uma categoria pode mudar seus
+links ou ocultar seus banners. Slugs em colisão recebem sufixo para distinguir destinos.
+
+Atualização: aplicar migrations pendentes para criar a tabela de banners.
+Verificação deste incremento: build e suíte MySQL isolada com 42 testes /
+341 assertions aprovados, incluindo categorias, banners e permissões.

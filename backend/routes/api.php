@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BannerController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\ProductController;
 use Illuminate\Support\Facades\Route;
@@ -11,10 +13,16 @@ Route::get('/health', HealthController::class);
 Route::middleware('web')->group(function () {
     Route::get('/csrf-cookie', fn () => response()->noContent());
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
+    Route::get('/categories', [CategoryController::class, 'index']);
+    Route::get('/banners', [BannerController::class, 'index']);
     Route::get('/products', [ProductController::class, 'index']);
     Route::get('/products/{product}', [ProductController::class, 'show'])->whereNumber('product');
 
     Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/admin/banners', [BannerController::class, 'manage']);
+        Route::post('/admin/banners', [BannerController::class, 'store']);
+        Route::put('/admin/banners/{banner}', [BannerController::class, 'update'])->whereNumber('banner');
+        Route::delete('/admin/banners/{banner}', [BannerController::class, 'destroy'])->whereNumber('banner');
         Route::get('/user', [AuthController::class, 'user']);
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::post('/products', [ProductController::class, 'store']);

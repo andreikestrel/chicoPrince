@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import CategoryInput from '../components/CategoryInput.vue'
+import { useCategories } from '../composables/useCategories'
 import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api, ApiError, prepareCsrf } from '../lib/api'
@@ -7,6 +9,7 @@ import type { Product } from '../types/products'
 
 const route = useRoute()
 const router = useRouter()
+const { load: reloadCategories } = useCategories()
 const { status, refreshSession } = useAuth()
 const isEdit = computed(() => route.params.id !== undefined)
 const empty = { name: '', description: '', image: '', price: '', category: '', stock: '0' }
@@ -64,6 +67,7 @@ async function save() {
     await (editing
       ? api.patch<{ data: Product }>(`/products/${encodeURIComponent(id)}`, payload)
       : api.post<{ data: Product }>('/products', payload))
+    void reloadCategories(true)
     if (current === generation) await router.replace({ name: 'admin-products', query: route.query })
   } catch (cause) {
     if (current !== generation) return
@@ -102,8 +106,7 @@ onBeforeUnmount(() => { generation++; controller?.abort() })
           <label for="product-description">Descrição</label>
           <textarea id="product-description" v-model="form.description" required rows="5" :aria-invalid="!!errors.description" aria-describedby="error-description" />
           <p id="error-description" class="error">{{ errors.description?.join(' ') }}</p>
-          <label for="product-category">Categoria</label>
-          <input id="product-category" v-model="form.category" required maxlength="100" :aria-invalid="!!errors.category" aria-describedby="error-category" />
+          <CategoryInput v-model="form.category" required :invalid="!!errors.category" />
           <p id="error-category" class="error">{{ errors.category?.join(' ') }}</p>
           <label for="product-price">Preço (R$)</label>
           <input id="product-price" v-model="form.price" type="number" min="0" max="99999999.99" step="0.01" required :aria-invalid="!!errors.price" aria-describedby="error-price" />

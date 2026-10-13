@@ -18,6 +18,7 @@ class ListProductsRequest extends FormRequest
 
         return [
             'search' => ['nullable', 'string', 'max:255'],
+            'category_slug' => ['nullable', 'string', 'max:200', 'prohibits:category'],
             'category' => ['nullable', 'string', 'max:100'],
             'min_price' => $price,
             'max_price' => [...$price, ...($this->filled('min_price') ? ['gte:min_price'] : [])],

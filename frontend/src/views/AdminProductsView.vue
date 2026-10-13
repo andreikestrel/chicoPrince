@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BannerManager from '../components/BannerManager.vue'
 import { computed, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
@@ -96,6 +97,7 @@ async function remove(ids: number[]) {
       <button v-if="status === 'error'" @click="refreshSession">Verificar sessão</button>
     </div>
     <template v-else>
+      <BannerManager />
       <RouterLink v-if="!busy" class="button-link" :to="{ name: 'product-create', query: route.query }">Criar produto</RouterLink>
       <fieldset class="filter-fieldset" :disabled="busy"><legend class="sr-only">Filtrar produtos</legend><ProductFilters :query="route.query" :show-sorting="false" @apply="apply" @clear="apply({})" /></fieldset>
       <p v-if="notice" class="catalog-message" role="status">{{ notice }}</p>

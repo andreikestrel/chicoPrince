@@ -185,3 +185,22 @@ Omitir variants preserva o conjunto. Cadastro e variações são gravados em tra
 Quando existem variações, stock é a soma calculada; escrita direta desse agregado
 é ignorada. Produtos antigos sem variações mantêm seu estoque até serem configurados.
 Preço e imagem pertencem ao produto base; variações não têm preço independente.
+## Categorias e banners
+
+- GET /api/categories: público, data com pares {name, slug} das categorias distintas
+  existentes nos produtos. Slugs sem acentos; colisões e rotas reservadas recebem
+  sufixo determinístico. Categorias continuam sendo texto, não uma entidade cadastrada à parte.
+- GET /api/products?category_slug=calcas: filtra por slug; combina com pesquisa,
+  preços, estoque, ordem e paginação. Slug desconhecido: 404.
+  category e category_slug juntos: 422.
+- GET /api/banners: público, até 20 ativos com categoria existente, por position/id.
+- GET /api/admin/banners: autenticado, paginação de 20 itens, incluindo inativos.
+- POST /api/admin/banners: autenticado + CSRF, 201.
+- PUT /api/admin/banners/{id}: autenticado + CSRF, 200.
+- DELETE /api/admin/banners/{id}: autenticado + CSRF, 204.
+
+POST/PUT recebem title (1–120 caracteres), image (URL HTTP(S), até 2048),
+category (categoria já existente), position (inteiro 0–9999) e active (booleano).
+Resposta em data: id e os mesmos campos. Categoria normalizada para o nome
+cadastrado quando digitada com caixa diferente. Validação 422 e demais erros
+seguem o envelope existente. Banners não criam promoções nem alteram preços.

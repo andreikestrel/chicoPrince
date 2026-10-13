@@ -14,6 +14,7 @@ export const router = createRouter({
     { path: '/checkout', name: 'checkout', component: () => import('./views/CheckoutView.vue'), meta: { title: 'Checkout' } },
     { path: '/conta', name: 'account', component: () => import('./views/AccountView.vue'), meta: { title: 'Minha conta' } },
     { path: '/login', name: 'login', component: () => import('./views/LoginView.vue'), meta: { title: 'Entrar' } },
+    { path: '/:categorySlug', name: 'category', component: HomeView, meta: { title: 'Catálogo' } },
     { path: '/:pathMatch(.*)*', name: 'not-found', component: () => import('./views/NotFoundView.vue'), meta: { title: 'Página não encontrada' } },
   ],
   scrollBehavior: () => ({ top: 0 }),
