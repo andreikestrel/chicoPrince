@@ -8,7 +8,8 @@ com API Laravel, banco MySQL e interface Vue 3 que consome a própria API.
 A base de desenvolvimento está funcional: Laravel e MySQL executam em containers,
 as migrations iniciais estão aplicadas e o Vue consulta a saúde da API e do banco.
 O modelo e os dados de exemplo estão disponíveis. O contrato REST está documentado;
-a autenticação, o CRUD e as telas do catálogo ainda estão em desenvolvimento.
+a autenticação por sessão e o CRUD da API estão disponíveis. As telas do catálogo
+e de login ainda estão em desenvolvimento.
 
 ## Stack e arquitetura
 
@@ -108,7 +109,7 @@ O usuário padrão é `dev@example.test`. Sua senha vem de `SEED_USER_PASSWORD` 
 ambiente local, gerada pelo script e nunca impressa. Consulte esse valor somente
 no seu arquivo privado. O seeder preserva usuários existentes e não redefine
 suas senhas. Os seeders de demonstração aceitam apenas ambientes local/testing.
-O fluxo de login ainda será implementado.
+O login já está disponível por API; a tela será implementada na etapa de frontend.
 
 ### 4. Acessar
 
@@ -180,8 +181,8 @@ O [modelo Product](./backend/app/Models/Product.php) usa a tabela `products`:
 
 Categoria como texto evita uma entidade de gerenciamento sem necessidade atual.
 O campo de imagem armazena somente o endereço; não baixa arquivos externos.
-Validação de URL, preço não negativo e demais entradas será feita com FormRequests
-na etapa de CRUD. Ainda não existem endpoints públicos de produtos.
+FormRequests validam URL, preço não negativo e demais entradas. Listagem e detalhe
+são públicos; criação, atualização e exclusão exigem sessão autenticada no backend.
 
 ## Operação do ambiente
 
@@ -218,8 +219,9 @@ Não use `down -v` no fluxo normal: ele remove também os volumes persistentes.
 
 O [contrato REST](./docs/API.md) descreve rotas, acesso, payloads, paginação,
 parâmetros de filtros e códigos HTTP. ProductResource e o tratamento padronizado
-de exceções já estão implementados e testados. As rotas de produtos ainda serão
-adicionadas com autenticação, FormRequests e CRUD.
+de exceções estão implementados e testados, assim como as rotas de sessão e CRUD.
+O fluxo de cookies/CSRF está descrito no contrato. Sanctum 4 autentica a sessão web;
+não são usados tokens Bearer. A listagem tem paginação fixa de 15 itens nesta etapa.
 
 ## Verificações
 
@@ -234,13 +236,16 @@ Verificado no ambiente de desenvolvimento:
 
 - Build e inicialização dos três serviços pelo Compose.
 - Migrations iniciais executadas no MySQL.
-- Suíte backend padrão: 14 testes passaram, 70 assertions; o teste específico de
+- Suíte backend padrão: 23 testes passaram, 140 assertions; o teste específico de
   estoque negativo no MySQL é ignorado quando o banco de teste é SQLite.
 - Testes de produtos e seeders executados também em MySQL isolado: 5 passaram,
   26 assertions, incluindo precisão do preço, estoque negativo e repetição da carga.
 - Reversão e reaplicação da migration de produtos verificadas no banco isolado.
 - TypeScript e build Vite executados no container Node.
 - HTTP 200 nas rotas de saúde e no proxy do Vite, com consulta real ao MySQL.
+- Fluxo HTTP real via proxy e MySQL: sessão, CSRF, CRUD, validação e logout;
+  produto temporário removido ao final. Os testes PHPUnit usam SQLite, onde o
+  middleware desabilita CSRF; por isso essa proteção foi verificada por HTTP real.
 - Navegador: estados de erro e sucesso da conexão, incluindo nova tentativa.
 
 O procedimento foi executado também em uma cópia isolada dos arquivos versionados,
@@ -252,8 +257,7 @@ Não foi adicionada suíte automatizada de frontend nesta etapa.
 
 ## Limitações e próximos passos
 
-Ainda faltam os requisitos de domínio: autenticação,
-FormRequests, CRUD, filtros combináveis, paginação, ordenação, logs e as respectivas
+Ainda faltam filtros combináveis, paginação configurável, ordenação, logs e as respectivas
 interfaces. O formato de erros e o Resource de produtos estão preparados;
 o endpoint de saúde mantém seu formato explícito de diagnóstico.
 

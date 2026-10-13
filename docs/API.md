@@ -1,8 +1,8 @@
 # Contrato REST
 
-Contrato planejado para a API de produtos. Nesta etapa, ProductResource e o
-tratamento de exceções estão implementados; os endpoints abaixo ainda não estão
-registrados. Autenticação, CRUD e filtros serão implementados nas próximas etapas.
+Contrato da API de produtos. Autenticação por sessão, CRUD, ProductResource e
+tratamento de exceções estão implementados. Filtros e ordenação configuráveis
+abaixo são planejados para a próxima etapa.
 
 ## Rotas e códigos de sucesso
 
@@ -15,8 +15,33 @@ registrados. Autenticação, CRUD e filtros serão implementados nas próximas e
 | PATCH /api/products/{id} | Autenticado | 200, atualização parcial |
 | DELETE /api/products/{id} | Autenticado | 204, sem corpo |
 
-A autorização de escrita será aplicada no backend. Nenhuma rota de escrita
-será disponibilizada sem essa proteção.
+A autorização de escrita é aplicada no backend via `auth:sanctum`. Todos os
+usuários autenticados podem gerenciar produtos; não há papéis distintos neste escopo.
+
+## Sessão e CSRF
+
+| Método e rota | Resultado |
+|---|---|
+| GET /api/csrf-cookie | 204; inicia sessão e fornece cookie XSRF-TOKEN |
+| POST /api/login | 200 com data contendo id, name, email; email e password obrigatórios |
+| GET /api/user | 200 com dados do usuário; 401 sem sessão |
+| POST /api/logout | 204; invalida a sessão e renova o token CSRF |
+
+A SPA usa cookies de mesma origem por meio do proxy `/api` do Vite.
+As rotas de produtos e sessão usam o middleware `web` explicitamente: sessão,
+criptografia de cookies e CSRF. O guard Sanctum autentica a sessão web; tokens
+Bearer não são aceitos nem emitidos. Não é necessário armazenar tokens no localStorage.
+
+Antes do login, faça GET /api/csrf-cookie com `credentials: 'include'`. Nas requisições
+POST/PUT/PATCH/DELETE, envie o valor decodificado do cookie XSRF-TOKEN no header
+X-XSRF-TOKEN, junto dos cookies e `Accept: application/json`. A sessão é HttpOnly;
+somente o cookie de CSRF deve ser lido pelo JavaScript. Repita a preparação após
+expiração da sessão. Cookie de sessão é renovado no login e invalidado no logout.
+
+Credenciais incorretas retornam 401 genérico. O login permite cinco tentativas
+por minuto por IP, incluindo tentativas válidas; excesso retorna 429 com Retry-After.
+Sem CSRF válido, uma escrita retorna 419 antes da verificação de autenticação;
+com CSRF válido, visitantes recebem 401. O endpoint de saúde dispensa sessão.
 
 ## Produto
 
@@ -40,12 +65,14 @@ Preço monetário usa string decimal com duas casas; datas usam ISO 8601 em UTC.
 Imagem é URL HTTP/HTTPS ou null. ID e timestamps são geridos pelo servidor.
 Na criação: name, description, price e category obrigatórios; stock padrão 0;
 image padrão null. PUT exige todos os campos editáveis; PATCH aceita um subconjunto.
-FormRequests validarão limites, URL, preço entre 0 e 99999999.99 com até duas casas
+FormRequests validam limites, URL, preço entre 0 e 99999999.99 com até duas casas
 e estoque inteiro entre 0 e 4294967295.
 
 ## Listagem e paginação
 
-Parâmetros planejados, combináveis por AND:
+A listagem atual usa 15 itens por página, ordenados por id ascendente, e aceita
+`page`. Os demais parâmetros abaixo ainda não são aplicados. Implementação
+planejada para a tarefa de filtros, combináveis por AND:
 
 | Parâmetro | Regra |
 |---|---|
@@ -124,7 +151,7 @@ O diagnóstico existente `/api/health` mantém seu contrato próprio: 200 com
 
 ## Estado da implementação
 
-- Disponível: GET /api/health, ProductResource e padronização de exceções.
-- Planejado: rotas de produtos, FormRequests, autenticação, filtros e logs.
+- Disponível: saúde, sessão, CRUD, FormRequests, Resource e padronização de exceções.
+- Planejado: filtros, ordenação/per_page configuráveis e logs de operações.
 - Testes do contrato usam rotas temporárias exclusivas do processo PHPUnit;
   essas rotas não existem na aplicação em execução.
