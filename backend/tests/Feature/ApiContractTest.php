@@ -52,6 +52,14 @@ class ApiContractTest extends TestCase
             ->assertJsonPath('error.code', 'method_not_allowed');
     }
 
+    public function test_forbidden_error_uses_the_same_contract(): void
+    {
+        Route::get('/api/_contract/forbidden', fn () => abort(403, 'internal authorization detail'));
+        $this->getJson('/api/_contract/forbidden')->assertForbidden()->assertExactJson([
+            'error' => ['code' => 'forbidden', 'message' => 'Acesso não permitido.', 'details' => []],
+        ]);
+    }
+
     public function test_resource_wraps_product_and_paginated_collection(): void
     {
         $product = Product::factory()->create(['price' => '19.90'])->fresh();

@@ -161,8 +161,8 @@ armazenada no banco; as duas precisam ser atualizadas de forma coordenada.
   Ele não substitui a configuração de entrega da aplicação em produção.
 - MySQL não publica porta no host. Seu volume preserva os dados ao recriar containers.
 - Polling no Vite facilita detectar mudanças em bind mounts, com maior uso de CPU.
-- A base usa recursos nativos do Laravel e `fetch` no Vue, sem camadas extras para
-  a consulta simples de saúde.
+- A API usa recursos nativos do Laravel. No Vue, Axios centraliza comunicação
+  HTTP e erros; um composable compartilha a sessão sem adicionar uma biblioteca de store.
 
 ## Modelo de produtos
 
@@ -229,7 +229,23 @@ Operações de escrita registram ação, ID do produto e ID do usuário no canal
 `backend/storage/logs/products-YYYY-MM-DD.log` não são versionados.
 O registro é síncrono e operacional, sem garantia de auditoria transacional.
 
+## Base da interface
+
+Vue Router organiza `/` (início), `/conta` (consulta da sessão) e a página 404.
+O layout compartilha a navegação; cada rota atualiza o título da página.
+Axios centraliza base da API, cookies, CSRF, timeout e normalização dos erros.
+O composable `useAuth` compartilha a sessão em memória, sem armazenar senhas ou
+tokens no navegador, e oferece consulta, login e logout para as próximas telas.
+Uma sessão ausente é tratada como visitante; falhas de conexão permitem nova tentativa.
+
+A página de conta ainda não contém formulário de login. Catálogo, filtros visuais,
+detalhes e gerenciamento serão implementados nas próximas etapas. Em produção,
+o servidor da SPA deverá redirecionar rotas do frontend para index.html, preservando
+as rotas `/api`; o Vite já oferece esse fallback em desenvolvimento.
+
 ## Verificações
+
+Veja o [guia de testes](./docs/TESTING.md) para cobertura e execução em MySQL isolado.
 
 ```sh
 docker compose -f backend/compose.yaml ps
@@ -242,10 +258,11 @@ Verificado no ambiente de desenvolvimento:
 
 - Build e inicialização dos três serviços pelo Compose.
 - Migrations iniciais executadas no MySQL.
-- Suíte backend padrão: 29 testes passaram, 194 assertions; o teste específico de
+- Suíte backend padrão: 32 testes passaram, 224 assertions; o teste específico de
   estoque negativo no MySQL é ignorado quando o banco de teste é SQLite.
-- Testes de produtos e seeders executados também em MySQL isolado: 5 passaram,
-  26 assertions, incluindo precisão do preço, estoque negativo e repetição da carga.
+- Suíte completa também executada em MySQL exclusivo de testes: 33 testes passaram,
+  226 assertions, sem casos ignorados. Inclui autenticação, CRUD, validação, erros,
+  filtros, paginação, logs e restrições reais do banco.
 - Reversão e reaplicação da migration de produtos verificadas no banco isolado.
 - TypeScript e build Vite executados no container Node.
 - HTTP 200 nas rotas de saúde e no proxy do Vite, com consulta real ao MySQL.
@@ -253,6 +270,8 @@ Verificado no ambiente de desenvolvimento:
   produto temporário removido ao final. Os testes PHPUnit usam SQLite, onde o
   middleware desabilita CSRF; por isso essa proteção foi verificada por HTTP real.
 - Navegador: estados de erro e sucesso da conexão, incluindo nova tentativa.
+- Base SPA: rota direta de conta, navegação, página 404 e recuperação após falha
+  de rede simulada na consulta de sessão. Sem suíte automatizada de frontend.
 - Filtros combinados e navegação entre páginas verificados no MySQL real via proxy;
   links usam o host acessível ao navegador. Build frontend passou após o ajuste.
 
@@ -265,8 +284,8 @@ Não foi adicionada suíte automatizada de frontend nesta etapa.
 
 ## Limitações e próximos passos
 
-Ainda faltam as interfaces do catálogo e gerenciamento, a revisão consolidada
-dos testes essenciais e o polimento da entrega. O formato de erros e o Resource de produtos estão preparados;
+Ainda faltam as interfaces do catálogo, login e gerenciamento e o polimento da
+entrega. O formato de erros e o Resource de produtos estão preparados;
 o endpoint de saúde mantém seu formato explícito de diagnóstico.
 
 Importação externa, filas, monitoramento e Elasticsearch não estão implementados.

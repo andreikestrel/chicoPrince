@@ -1,22 +1,15 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { api } from '../lib/api'
 
 const state = ref<'loading' | 'success' | 'error'>('loading')
-const apiBase = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '')
 
 async function checkConnection() {
   state.value = 'loading'
 
   try {
-    const response = await fetch(`${apiBase}/health`, {
-      headers: { Accept: 'application/json' },
-      signal: AbortSignal.timeout(10000),
-      cache: 'no-store',
-    })
-
-    if (!response.ok) throw new Error('Service unavailable')
-
-    const result = await response.json()
+    const response = await api.get('/health')
+    const result = response.data
     if (result?.data?.status !== 'ok' || result?.data?.database !== 'ok') {
       throw new Error('Unexpected response')
     }
