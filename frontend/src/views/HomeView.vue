@@ -12,6 +12,10 @@ import ProductFilters from '../components/ProductFilters.vue'
 
 const route = useRoute()
 const router = useRouter()
+const hasSearch = computed(() => {
+  const value = route.query.search
+  return Boolean((Array.isArray(value) ? value[0] : value)?.trim())
+})
 const { categories, load } = useCategories()
 onMounted(() => load(true))
 const filters = computed<LocationQuery>(() => {
@@ -44,13 +48,13 @@ function changePage(page: number) {
 </script>
 
 <template>
-  <section class="catalog-intro" aria-labelledby="catalog-title">
+  <section v-if="!hasSearch" class="catalog-intro" aria-labelledby="catalog-title">
     <h1 id="catalog-title">Vista sua própria história.</h1>
     <p class="description">Todo príncipe e toda princesa têm seu estilo.<br />O seu começa aqui.</p>
     <p class="description">Explore nosso catálogo e encontre peças dignas da sua personalidade.</p>
   </section>
   <CouponNotice />
-  <CatalogCarousel />
+  <CatalogCarousel v-if="!hasSearch" />
   <ProductFilters :query="filterForm" :show-sorting="false" @apply="applyFilters" @clear="applyFilters({})" />
   <CatalogSort :query="route.query" @change="changeSort" />
   <section class="catalog-results" aria-label="Produtos" :aria-busy="loading">
