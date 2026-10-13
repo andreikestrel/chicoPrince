@@ -2,8 +2,8 @@
 
 [Projeto](../../README.md) · [Backend](../backend/README.md) · [Coletor](../../scraper/chicorei/collect.py)
 
-Integração opcional para obter uma amostra de produtos públicos e demonstrar o catálogo.
-A aplicação também funciona com produtos fictícios, sem depender da loja externa.
+A instalação descrita no README principal tenta coletar e importar até 45 produtos públicos automaticamente após as migrations.
+Sem amostra válida, o catálogo vazio recebe produtos fictícios automaticamente. A aplicação não depende da loja externa para inicializar; a carga offline e as opções de importação manual estão abaixo.
 
 ## Duas etapas distintas
 

@@ -50,7 +50,7 @@ no gerenciamento e administrador consegue criar/editar/excluir.
 2. Siga o README desde o bootstrap; gere configuração própria.
 3. Se mantiver outra instalação ligada, use portas diferentes e nome Compose distinto.
    Prefixe todos os comandos Compose desse teste com -p chico-prince-validation.
-4. Execute migrations e carga offline. Confirme catálogo de 24 produtos e as contas.
+4. Para este roteiro sem dependência da coleta, substitua o comando combinado de migrations/importação do README por duas chamadas Artisan: php artisan migrate e php artisan catalog:bootstrap --offline, no serviço laravel.test e como usuário sail. Confirme catálogo de 24 produtos e as contas. O caminho padrão do README tenta a coleta online; sua validação está registrada ao final deste guia.
 5. Rode build e testes. Execute o roteiro manual abaixo.
 6. Pare/recrie somente os containers desse projeto, sem remover volumes; confira persistência.
 
@@ -120,8 +120,27 @@ outras operações renovam antes da próxima tentativa explícita. Sem reenvio a
 A correção foi aplicada ao código principal e ao clone, com novo build e teste de
 login usando cookie deliberadamente inválido, além do ciclo logout/login.
 
-A coleta online não foi repetida nessa instalação; extração real já havia sido
-executada em incremento anterior. Não houve nova execução da suíte MySQL dedicada
+A etapa inicial acima usou carga offline. A coleta online foi validada posteriormente em banco vazio, conforme seção abaixo. Não houve nova execução da suíte MySQL dedicada
 nesse clone: os percursos reais usaram MySQL e a suíte padrão usou SQLite.
 Não há suíte automatizada frontend, auditoria independente, teste completo de leitor
 de tela ou ensaio de carga concorrente. Testes aprovados não garantem ausência de falhas.
+### Coleta online no clone — 2026-10-13
+
+Executado catalog:bootstrap --limit=45 pelo Sail, com nove migrations aplicadas
+em banco vazio e volumes próprios. Sem --offline, --file ou --replace-demo.
+
+- Relatório: 45 solicitados, 45 coletados, 45 URLs visitadas, nenhuma falha
+  e nenhum motivo de interrupção.
+- Importação: 44 produtos válidos; Camiseta Through The Valley foi ignorada
+  por ausência de descrição. Nenhum produto fictício foi criado.
+- Banco: 44 origens distintas, 44 caminhos de categoria, 132 variações
+  demonstrativas, três usuários de avaliação/legado e nenhum pedido.
+- Navegador: catálogo com 44 produtos, uma imagem externa conferida carregada
+  em 1800×2700 e botão Comprar habilitado após selecionar cor/tamanho no detalhe.
+  Não foi verificado o carregamento individual de todas as imagens.
+- Reexecutar o mesmo bootstrap preservou o catálogo e terminou sem nova coleta.
+- Nenhuma alteração de implementação foi necessária para a coleta online.
+
+O coletor gera JSON sem gravar banco; a escrita acima é feita separadamente pelo
+comando Laravel. As variações/quantidades são dados fictícios de suporte,
+não quantidades extraídas da origem. A disponibilidade futura da fonte não é garantida.

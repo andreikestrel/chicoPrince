@@ -28,7 +28,7 @@ catálogo, variações e banners.
 | Painel | Tabela com imagem e campos do produto, filtros, ordenação, seleção múltipla, visualização conjunta e exclusão individual/em lote com confirmação. |
 | Cadastro e edição | Uma única view para criar/editar, validação por campo, variações e retorno à tabela após salvar. |
 | Banners | Imagem por URL, texto, categoria, posição e ativação; carrossel manual de até 20 banners ativos. |
-| Carga inicial | 24 produtos fictícios sem dependência externa ou coleta opcional de até 45 produtos da Chico Rei, fallback e complemento demonstrativo de variações. |
+| Carga inicial | Importação de até 45 produtos da Chico Rei durante a instalação, com variações demonstrativas e fallback automático para 24 produtos fictícios. |
 | Qualidade | FormRequests, Resources, erros JSON padronizados, logs de CRUD, testes de backend/coletor, build TypeScript, estados de carregamento/vazio/erro e acessibilidade básica. |
 
 **A compra é demonstrativa:** não há cobrança, integração financeira ou cálculo real
@@ -80,35 +80,26 @@ Valores existentes são preservados. Não copie configuração privada de outra 
 O primeiro build pode demorar. O frontend executa npm ci ao iniciar.
 Aguarde o MySQL saudável e o Vite pronto nos logs.
 
-### 3. Preparar o banco
+### 3. Preparar o banco e importar o catálogo
 
     docker compose -f backend/compose.yaml exec laravel.test chown -R sail:sail .env storage bootstrap/cache
     docker compose -f backend/compose.yaml restart laravel.test
-    docker compose -f backend/compose.yaml exec --user sail laravel.test php artisan migrate
+    docker compose -f backend/compose.yaml exec --user sail laravel.test sh -lc 'php artisan migrate && php artisan catalog:bootstrap --limit=45'
 
-### 4. Escolher a carga inicial
+Esse comando aplica as migrations, cria as contas de avaliação e tenta coletar até
+45 produtos da Chico Rei. Os produtos válidos recebem variações e estoque
+demonstrativos para experimentar a compra. Aguarde a conclusão: a coleta leva
+vários minutos e páginas incompletas podem resultar em menos produtos.
 
-**Sem depender da coleta externa:**
+Se a coleta não fornecer produtos válidos, o sistema cria automaticamente 24
+produtos fictícios. Nesse caso, cadastre variações no painel para testar a compra.
+As imagens dos produtos coletados são carregadas da origem externa.
 
-    docker compose -f backend/compose.yaml exec --user sail laravel.test php artisan catalog:bootstrap --offline
+Reexecutar o comando preserva um catálogo existente, sem coletar novamente.
+Não é necessário importar arquivos manualmente. Opções avançadas estão no
+[guia da coleta](docs/scraping/README.md).
 
-Cria 24 produtos fictícios e contas de avaliação. Esses produtos não têm imagens
-nem variações automáticas: entre como administrador e cadastre cor/tamanho/estoque
-para experimentar a compra, ou crie um produto com variações.
-
-**Alternativa, para iniciar com produtos coletados:**
-
-    docker compose -f backend/compose.yaml exec --user sail laravel.test php artisan catalog:bootstrap --limit=45
-
-Use esta alternativa no lugar da carga offline, em catálogo vazio. Dados válidos
-são importados com variações demonstrativas. Sem produtos válidos, usa os fictícios.
-A meta não garante 45 itens: páginas incompletas são ignoradas.
-A coleta pode levar vários minutos. Imagens permanecem URLs externas.
-
-Se já houver produtos, o comando padrão preserva o catálogo e não coleta novamente.
-Substituição seletiva e opções estão no [guia da coleta](docs/scraping/README.md).
-
-### 5. Acessar
+### 4. Acessar
 
 | Endereço | Uso |
 |---|---|
@@ -148,7 +139,7 @@ Variáveis, atualização e diagnóstico estão no [guia do backend](docs/backen
 
 A suíte padrão usa SQLite em memória. O [guia de testes](docs/TESTING.md) explica
 MySQL dedicado e o roteiro manual de avaliação. A instalação limpa foi executada
-com dependências novas, carga offline, compra no navegador e persistência após recriar containers;
+com dependências novas, carga offline, compra no navegador e persistência após recriar containers. Também foi validada a coleta online em banco vazio, com 44 produtos importados;
 resultados e limites estão registrados nesse guia.
 
 ## Limites do escopo
