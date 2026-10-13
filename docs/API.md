@@ -9,20 +9,19 @@ tratamento de exceções, filtros, paginação configurável, ordenação e logs
 |---|---|---|
 | GET /api/products | Público | 200, coleção paginada |
 | GET /api/products/{id} | Público | 200, produto |
-| POST /api/products | Autenticado | 201, produto criado |
-| PUT /api/products/{id} | Autenticado | 200, substituição dos campos editáveis |
-| PATCH /api/products/{id} | Autenticado | 200, atualização parcial |
-| DELETE /api/products/{id} | Autenticado | 204, sem corpo |
+| POST /api/products | Administrador | 201, produto criado |
+| PUT /api/products/{id} | Administrador | 200, substituição dos campos editáveis |
+| PATCH /api/products/{id} | Administrador | 200, atualização parcial |
+| DELETE /api/products/{id} | Administrador | 204, sem corpo |
 
-A autorização de escrita é aplicada no backend via `auth:sanctum`. Todos os
-usuários autenticados podem gerenciar produtos; não há papéis distintos neste escopo.
+A autorização de escrita é aplicada no backend via `auth:sanctum`. O middleware RequireAdmin também exige is_admin=true para produtos e banners; clientes recebem 403.
 
 ## Sessão e CSRF
 
 | Método e rota | Resultado |
 |---|---|
 | GET /api/csrf-cookie | 204; inicia sessão e fornece cookie XSRF-TOKEN |
-| POST /api/login | 200 com data contendo id, name, email; email e password obrigatórios |
+| POST /api/login | 200 com data contendo id, name, email, is_admin; email e password obrigatórios |
 | GET /api/user | 200 com dados do usuário; 401 sem sessão |
 | POST /api/logout | 204; invalida a sessão e renova o token CSRF |
 
@@ -194,13 +193,47 @@ Preço e imagem pertencem ao produto base; variações não têm preço independ
   preços, estoque, ordem e paginação. Slug desconhecido: 404.
   category e category_slug juntos: 422.
 - GET /api/banners: público, até 20 ativos com categoria existente, por position/id.
-- GET /api/admin/banners: autenticado, paginação de 20 itens, incluindo inativos.
-- POST /api/admin/banners: autenticado + CSRF, 201.
-- PUT /api/admin/banners/{id}: autenticado + CSRF, 200.
-- DELETE /api/admin/banners/{id}: autenticado + CSRF, 204.
+- GET /api/admin/banners: administrador, paginação de 20 itens, incluindo inativos.
+- POST /api/admin/banners: administrador + CSRF, 201.
+- PUT /api/admin/banners/{id}: administrador + CSRF, 200.
+- DELETE /api/admin/banners/{id}: administrador + CSRF, 204.
 
 POST/PUT recebem title (1–120 caracteres), image (URL HTTP(S), até 2048),
 category (categoria já existente), position (inteiro 0–9999) e active (booleano).
 Resposta em data: id e os mesmos campos. Categoria normalizada para o nome
 cadastrado quando digitada com caixa diferente. Validação 422 e demais erros
 seguem o envelope existente. Banners não criam promoções nem alteram preços.
+## Pedidos demonstrativos
+
+POST /api/orders exige sessão e CSRF. Corpo: request_key (UUID), coupon
+(null ou PRIMEIRACOMPRA), items (1–100 combinações distintas, com variant_id,
+quantity de 1–99 e unit_price como string decimal de duas casas) e address.
+Endereço: recipient, cep, street, number, complement opcional, district, city,
+state (UF com duas letras maiúsculas). Campos extras de preço total não são aceitos
+como fonte de cálculo.
+
+Retorna 201 em data com id, status completed, subtotal, discount, shipping, total,
+items e created_at. Valores monetários da resposta e snapshots dos itens são
+inteiros em centavos. Preço enviado é uma confirmação: divergência do banco
+retorna 422. Falta de estoque, dados inválidos ou cupom inelegível também retornam
+422 e não criam pedido nem baixam estoque.
+
+A transação bloqueia usuário, produtos e variações; calcula valores no servidor,
+baixa estoque e grava snapshots. Shipping é zero, explicitamente demonstrativo.
+PRIMEIRACOMPRA vale 10% sobre produtos apenas quando a conta não tem pedido.
+Não há processamento financeiro.
+
+Reenviar a mesma request_key e conteúdo para a mesma conta retorna o pedido
+existente em 200, sem nova baixa. Mesma chave com conteúdo diferente retorna 422.
+Não existem endpoints de histórico/cancelamento neste escopo.
+
+GET /api/demo-accounts é público apenas em local/testing (404 nos demais ambientes)
+e retorna os dois acessos públicos de avaliação apresentados no login.
+
+## Categorias importadas
+
+Produtos também retornam category_path (lista, vazia para produtos sem caminho)
+e demo_variants (booleano). As categorias disponíveis incluem a categoria principal
+e cada item do caminho importado. Banner.category mantém uma única categoria de destino,
+validada contra essa união. Filtros category e category_slug buscam tanto a categoria
+principal quanto a presença no JSON category_path, combinados com os demais filtros.

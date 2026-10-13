@@ -18,12 +18,11 @@ funcionais locais; não representa auditoria independente nem teste de carga.
 | Logs | Ação, IDs de produto e usuário; sem payload, senha ou token; retenção operacional de 14 dias. |
 | Repositório | Configuração privada, logs e documentos internos fora do rastreamento Git. |
 
-O termo admin na rota não define uma função de administrador. Todos os usuários
-autenticados podem gerenciar todos os produtos, conforme o modelo atual do teste.
+Gerenciamento de produtos e banners exige is_admin=true no backend. Clientes podem comprar e recebem 403 ao tentar administrar. O campo não permite mass assignment.
 
 ## Verificações executadas
 
-- Suíte no MySQL exclusivo de testes: 33 testes, 226 assertions, todos aprovados.
+- Suíte no MySQL exclusivo de testes: 56 testes, 444 assertions, todos aprovados.
 - Build TypeScript/Vite.
 - Navegador: bloqueio de gerenciamento para visitante, CRUD e exclusão parcial
   com falha 503 simulada, seguida de nova tentativa só do item pendente.
@@ -37,7 +36,7 @@ autenticados podem gerenciar todos os produtos, conforme o modelo atual do teste
 - Exclusão em lote não é transacional; fechar/recarregar durante a operação pode interromper
   o lote. A navegação interna é bloqueada enquanto a operação está em andamento.
 - Imagens externas ainda revelam o IP do navegador ao servidor da imagem. Não há proxy/upload.
-- Não há papéis, ACL por produto ou trilha transacional de auditoria.
+- Há papéis admin/cliente; não há ACL por produto ou trilha transacional de auditoria.
 - O servidor de desenvolvimento não equivale a implantação de produção. HTTPS, cookies
   seguros e configuração do servidor/reverse proxy devem ser definidos na implantação.
 - Testes PHPUnit não exercitam CSRF; a proteção foi verificada separadamente por HTTP.
@@ -47,3 +46,21 @@ autenticados podem gerenciar todos os produtos, conforme o modelo atual do teste
 Medições e ajustes específicos da estação de desenvolvimento são mantidos fora
 da documentação pública. As mudanças de interface evitam bootstrap CSRF repetido,
 consultas ao abandonar views e desmontagem dos cards durante atualização.
+
+## Checkout e contas de demonstração
+
+Pedidos exigem sessão e CSRF, preços conferidos com o banco, totais em centavos,
+estoque por combinação e gravação transacional. Chave única por usuário/tentativa
+evita repetir pedidos idênticos; conteúdo divergente é rejeitado.
+Cupom é validado no servidor e limitado ao primeiro pedido por conta.
+Há bloqueios de linhas; não foi realizado ensaio de carga concorrente.
+
+No navegador foram verificados login com retorno ao checkout, compra demonstrativa,
+baixa de estoque, carrinho esvaziado e permissões distintas de admin/cliente.
+Dados temporários de QA foram removidos; contas públicas de avaliação preservadas.
+Seed e divulgação dos dois acessos de avaliação são exclusivos de local/testing.
+Não há cobrança financeira, cancelamento ou histórico visual de pedidos.
+
+Categorias do caminho importado usam consultas JSON parametrizadas. Essa extensão
+e a lista de categorias calculada em memória atendem ao catálogo pequeno do teste;
+bases maiores exigem medição e possível normalização de categorias.

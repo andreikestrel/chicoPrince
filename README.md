@@ -5,12 +5,13 @@ com API Laravel, banco MySQL e interface Vue 3 que consome a própria API.
 
 ## Estado do projeto
 
-A base de desenvolvimento está funcional: Laravel e MySQL executam em containers,
-as migrations iniciais estão aplicadas e o Vue consulta a saúde da API e do banco.
-O modelo e os dados de exemplo estão disponíveis. O contrato REST está documentado;
-a autenticação por sessão e o CRUD da API estão disponíveis. O catálogo público
-oferece busca, filtros combinados, ordenação, paginação e detalhes dos produtos.
-Login, logout, criação, edição e exclusão estão disponíveis na interface.
+O catálogo público oferece busca, filtros combinados, ordenação, paginação e detalhes.
+O painel exclusivo de administradores concentra criação, edição e exclusão de produtos, variações
+de cor/tamanho com estoque próprio e banners por categoria.
+
+O carrinho funciona em modal lateral, com persistência local e seleção obrigatória
+de cor e tamanho no detalhe. O checkout demonstrativo oferece endereço,
+consulta de CEP, resumo e cupom PRIMEIRACOMPRA (10% no primeiro pedido). A finalização autenticada cria o pedido concluído e baixa estoque, sem cobrança financeira ou frete real.
 
 ## Stack e arquitetura
 
@@ -93,18 +94,18 @@ Aguarde o servidor iniciar após o restart. Use `--user sail` nos comandos Artis
 para manter os arquivos gerados acessíveis ao processo web. No WSL/Linux, também
 é possível usar `./vendor/bin/sail` dentro de [backend/](./backend/).
 
-As migrations criam as tabelas iniciais do Laravel e a tabela de produtos.
-Para popular o banco de desenvolvimento:
+As migrations criam as tabelas do Laravel, produtos, variações e banners.
+Para inicializar um banco vazio com dados fictícios, sem acesso externo:
 
 ```sh
 docker compose -f backend/compose.yaml exec --user sail laravel.test php scripts/init-env.php
-docker compose -f backend/compose.yaml exec --user sail laravel.test php artisan db:seed
+docker compose -f backend/compose.yaml exec --user sail laravel.test php artisan catalog:bootstrap --offline
 ```
 
-A carga cria 24 produtos fictícios, três categorias (Camisetas, Canecas e Ecobags),
+A carga offline cria 24 produtos fictícios, três categorias (Camisetas, Canecas e Ecobags),
 preços variados e itens com e sem estoque. Imagens são nulas, sem downloads ou
 dependência de serviços externos. Nomes estáveis evitam duplicação ao repetir
-a carga; produtos editados localmente são preservados enquanto mantiverem o nome.
+db:seed diretamente; o comando catalog:bootstrap preserva integralmente um catálogo já preenchido.
 
 O usuário padrão é `dev@example.test`. Sua senha vem de `SEED_USER_PASSWORD` no
 ambiente local, gerada pelo script e nunca impressa. Consulte esse valor somente
@@ -183,7 +184,7 @@ O [modelo Product](./backend/app/Models/Product.php) usa a tabela `products`:
 Categoria como texto evita uma entidade de gerenciamento sem necessidade atual.
 O campo de imagem armazena somente o endereço; não baixa arquivos externos.
 FormRequests validam URL, preço não negativo e demais entradas. Listagem e detalhe
-são públicos; criação, atualização e exclusão exigem sessão autenticada no backend.
+são públicos; criação, atualização e exclusão exigem sessão de administrador no backend.
 
 ## Operação do ambiente
 
@@ -256,15 +257,14 @@ Imagem e fallback são compartilhados entre cards e detalhe.
 
 O login prepara o CSRF e autentica por cookie de sessão; credenciais inválidas,
 falha de conexão, expiração do CSRF e limite de tentativas recebem feedback.
-Após entrar, a interface abre a conta; ao recarregar, consulta a sessão no servidor.
+Após entrar, a interface retorna ao checkout quando ele originou o login; nos demais casos abre a conta. Ao recarregar, consulta a sessão no servidor.
 A senha é limpa ao concluir cada tentativa. Usuários autenticados que acessam
 `/login` são encaminhados para `/conta`. Logout atualiza o estado compartilhado.
 
-Usuários autenticados acessam `/admin/products` pelo cabeçalho. O painel reúne
+Administradores acessam `/admin/products` pelo cabeçalho. O painel reúne
 tabela com todos os campos e imagens, busca, filtros, ordenação, paginação e
 visualização conjunta dos selecionados. A seleção fica restrita à página atual
-e é limpa ao mudar os filtros ou a página. Não existe papel administrativo separado:
-a política do teste permite escrita a qualquer usuário autenticado.
+e é limpa ao mudar os filtros ou a página. O backend exige o papel de administrador para gerenciar produtos e banners; clientes recebem 403 nessas operações.
 
 Criar (`/admin/products/new`) e editar (`/admin/products/:id/edit`) usam uma única
 view que deriva `isEdit` do ID da rota:
@@ -348,13 +348,13 @@ Não foi adicionada suíte automatizada de frontend nesta etapa.
 
 Ainda falta o polimento final da entrega.
 Carrinho lateral e seleção obrigatória de cor/tamanho no detalhe estão implementados.
-O checkout possui endereço, consulta de CEP e resumo; criação de pedidos, frete,
-descontos e pagamento ainda não estão implementados.
+O checkout cria pedidos demonstrativos concluídos e valida preços, estoque e cupom no servidor. PRIMEIRACOMPRA concede 10% sobre os produtos apenas no primeiro pedido da conta. Não há pagamento real, cálculo de frete, vale-presente, histórico visual de pedidos ou cancelamento.
 Mensagens detalhadas de validação do Laravel ainda usam o idioma padrão
 em inglês. O formato de erros e o Resource de produtos estão preparados;
 o endpoint de saúde mantém seu formato explícito de diagnóstico.
 
-Importação externa, filas, monitoramento e Elasticsearch não estão implementados.
+Coleta e carga inicial opcionais da Chico Rei estão disponíveis via Docker.
+Sincronização de catálogos existentes, filas, monitoramento e Elasticsearch não estão implementados.
 São opcionais e ficam subordinados à conclusão dos requisitos obrigatórios.
 Nenhum serviço externo de produtos é necessário para executar a base atual.
 
@@ -364,7 +364,7 @@ O botão flutuante abre o carrinho lateral. Comprar aparece somente no detalhe,
 após selecionar cor e tamanho. IDs de produto/variação e quantidades persistem no
 navegador; preços e disponibilidade são consultados novamente na API. O carrinho
 é compartilhado entre sessões nesse navegador, sem sincronização entre dispositivos.
-Totais locais são informativos; a finalização de pedidos ainda está em desenvolvimento.
+Totais locais são informativos; a finalização recalcula valores e disponibilidade no servidor.
 
 O painel permite cadastrar combinações de cor/tamanho e estoque. O estoque total
 é calculado a partir delas, enquanto preço e imagem são compartilhados. Execute
@@ -390,3 +390,109 @@ links ou ocultar seus banners. Slugs em colisão recebem sufixo para distinguir 
 Atualização: aplicar migrations pendentes para criar a tabela de banners.
 Verificação deste incremento: build e suíte MySQL isolada com 42 testes /
 341 assertions aprovados, incluindo categorias, banners e permissões.
+## Carga inicial opcional com produtos da Chico Rei
+
+Depois das migrations e da configuração do ambiente, escolha UMA das cargas:
+offline (acima), coleta online (abaixo) ou JSON de coleta anterior.
+Não execute a carga offline antes da online se quiser inicializar com produtos reais.
+
+    docker compose -f backend/compose.yaml exec --user sail laravel.test php artisan catalog:bootstrap --limit=20
+
+O comando roda o coletor Python dentro do Sail. Em catálogo vazio, usa os produtos
+válidos encontrados; se não houver nenhum ou a coleta falhar, gera os 24 fictícios.
+Uma amostra parcial válida é aceita. Os usuários de demonstração são criados em ambos os caminhos; os dois acessos públicos de teste têm suas credenciais restauradas pelo seeder. O usuário legado mantém sua senha existente. Escrita dos produtos é transacional.
+
+Por padrão, se o catálogo já tem qualquer produto, o comando termina sem coleta nem alteração.
+A substituição seletiva de fictícios exige --replace-demo (descrita abaixo). A escolha padrão acontece antes da
+primeira carga; reiniciar o Docker também não executa coleta automaticamente.
+As migrations criam estrutura; os seeders/comandos de carga criam os dados.
+
+A pasta [scraper/chicorei](./scraper/chicorei/) é montada em /opt/chicorei no container.
+Em instalações existentes, recrie o serviço para aplicar esse mount:
+
+    docker compose -f backend/compose.yaml up -d --no-deps laravel.test
+
+Para usar a amostra local já coletada, substitua PASTA_DA_EXECUCAO pelo diretório real:
+
+    docker compose -f backend/compose.yaml exec --user sail laravel.test php artisan catalog:bootstrap --file=/opt/chicorei/data/PASTA_DA_EXECUCAO/products.json
+
+O padrão é 20; --limit aceita de 1 a 45. Quarenta e cinco produtos exigem cerca de
+4 minutos com intervalo de 5 segundos, podendo demorar mais ou resultar em menos
+dados. Timeout total do processo: 2200 segundos. Erros de acesso, bloqueios e
+mudanças no HTML podem interromper a coleta; não há promessa de catálogo completo.
+
+As imagens permanecem URLs externas e podem ficar indisponíveis. Não são baixadas
+nem validadas por download durante a carga. Estoques quantitativos e variações não foram extraídos da origem. O seeder de suporte cria dados demonstrativos: COR DA IMAGEM, tamanhos P/M/G para Camiseta/Camisa (ÚNICO para outros tipos), 5 unidades por tamanho. A interface identifica esse caráter demonstrativo. O seeder fictício também não
+configura variações automaticamente.
+
+A carga é exclusiva de local/testing. Não sincroniza produtos existentes nem
+substitui um sistema de estoque. Os dados coletados são locais e ignorados pelo Git.
+Testes: 49 testes / 378 assertions no MySQL isolado e quatro testes Python;
+coleta real de um produto verificada dentro do Docker.
+### Substituir somente fictícios intactos
+
+Primeiro simule usando o JSON coletado:
+
+    docker compose -f backend/compose.yaml exec --user sail laravel.test php artisan catalog:bootstrap --limit=45 --file=/opt/chicorei/data/PASTA_DA_EXECUCAO/products.json --replace-demo --dry-run
+
+Confira os IDs candidatos; depois repita sem --dry-run.
+Somente produtos idênticos ao seeder, sem variações, sem origem de importação e
+sem registro de atualização são candidatos. Produtos editados ou próprios permanecem.
+
+Antes das exclusões, o comando salva uma cópia dos produtos e variações em
+storage/app/private/catalog-backups, fora do Git. Se o backup falhar, a troca não ocorre.
+Criação e exclusão fazem parte da mesma transação. Uma amostra inválida/vazia
+preserva o catálogo existente. O modo padrão de inicialização vazia mantém o fallback.
+
+A migration de suporte adiciona import_key, source_url e demo_variants.
+import_key identifica a URL de origem para evitar duplicação nas reexecuções.
+Produtos importados existentes não são atualizados automaticamente.
+ProductDemoVariantsSeeder preenche apenas importados sem variações e ainda não
+complementados; reexecutá-lo não repõe estoque nem recria variações removidas
+de produtos já complementados. Os valores são fictícios, não informação da Chico Rei.
+
+Para executar o complemento separadamente:
+
+    docker compose -f backend/compose.yaml exec --user sail laravel.test php artisan db:seed --class=ProductDemoVariantsSeeder
+## Checkout demonstrativo e acessos de avaliação
+
+Ao continuar para o checkout, visitantes são encaminhados ao login e retornam
+ao checkout após autenticar. Finalizar compra persiste um pedido completed,
+baixa o estoque da combinação e remove as unidades compradas do carrinho.
+Preços, estoque e desconto são conferidos em transação pelo servidor.
+Uma chave de tentativa impede duplicar o pedido ao reenviar o mesmo conteúdo.
+Frete sem cobrança e ausência de pagamento real são identificados na interface.
+
+Em ambiente local/testing, o login apresenta os acessos públicos de demonstração:
+
+| Papel | E-mail | Senha |
+|---|---|---|
+| Administrador | admin@chicoprince.com | 123456 |
+| Cliente | teste@chicoprince.com | 654321 |
+
+Para atualizar uma instalação existente:
+
+    docker compose -f backend/compose.yaml exec --user sail laravel.test php artisan migrate
+    docker compose -f backend/compose.yaml exec --user sail laravel.test php artisan db:seed --class=DemoAccountsSeeder
+
+Esse seeder cria ou restaura apenas os dois acessos de avaliação. Usuários existentes
+permanecem clientes; não há promoção geral. Credenciais e endpoint de demonstração
+são restritos a local/testing e não devem ser usados em produção.
+
+## Categorias da coleta e seleção de variações
+
+A importação preserva category_path como uma lista de categorias. Sugestões, banners
+e filtros aceitam qualquer item dessa lista, além da categoria principal.
+O campo continua identificado como Categoria na interface. Para complementar uma
+carga anterior sem substituir produtos, preços, estoques ou edições:
+
+    docker compose -f backend/compose.yaml exec --user sail laravel.test php artisan catalog:categories /opt/chicorei/data/PASTA_DA_EXECUCAO/products.json
+
+O comando só preenche caminhos ausentes em produtos com a mesma origem importada.
+Cor e tamanho são selecionados por botões circulares; tamanhos sem estoque para
+a cor selecionada permanecem visíveis, opacos e desabilitados.
+A opção Cor da imagem usa três faixas diagonais e identificação no hover.
+
+Verificação mais recente: 56 testes de backend / 444 assertions em MySQL isolado
+e build TypeScript/Vite aprovados. Compra, login e permissões também foram
+verificados no navegador. A instalação limpa não foi repetida após estes incrementos.
