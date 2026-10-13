@@ -8,8 +8,9 @@ com API Laravel, banco MySQL e interface Vue 3 que consome a própria API.
 A base de desenvolvimento está funcional: Laravel e MySQL executam em containers,
 as migrations iniciais estão aplicadas e o Vue consulta a saúde da API e do banco.
 O modelo e os dados de exemplo estão disponíveis. O contrato REST está documentado;
-a autenticação por sessão e o CRUD da API estão disponíveis. As telas do catálogo
-e de login ainda estão em desenvolvimento.
+a autenticação por sessão e o CRUD da API estão disponíveis. O catálogo público
+oferece busca, filtros combinados, ordenação e paginação. Login e gerenciamento
+pela interface ainda estão em desenvolvimento.
 
 ## Stack e arquitetura
 
@@ -113,7 +114,7 @@ O login já está disponível por API; a tela será implementada na etapa de fro
 
 ### 4. Acessar
 
-- Interface: http://localhost:5173 — deve mostrar “Tudo conectado”.
+- Interface: http://localhost:5173 — catálogo público de produtos.
 - Saúde da API e MySQL: http://localhost:8081/api/health.
 - Saúde básica do Laravel: http://localhost:8081/up.
 
@@ -231,15 +232,25 @@ O registro é síncrono e operacional, sem garantia de auditoria transacional.
 
 ## Base da interface
 
-Vue Router organiza `/` (início), `/conta` (consulta da sessão) e a página 404.
+Vue Router organiza `/` (catálogo), `/conta` (consulta da sessão) e a página 404.
 O layout compartilha a navegação; cada rota atualiza o título da página.
 Axios centraliza base da API, cookies, CSRF, timeout e normalização dos erros.
 O composable `useAuth` compartilha a sessão em memória, sem armazenar senhas ou
 tokens no navegador, e oferece consulta, login e logout para as próximas telas.
 Uma sessão ausente é tratada como visitante; falhas de conexão permitem nova tentativa.
 
-A página de conta ainda não contém formulário de login. Catálogo, filtros visuais,
-detalhes e gerenciamento serão implementados nas próximas etapas. Em produção,
+O catálogo usa cards com preço em reais, categoria, disponibilidade e alternativa
+para imagens ausentes ou com falha. O formulário combina busca por nome, categoria
+exata, preços, estoque, ordenação e quantidade de itens (1–100). A categoria é texto
+livre, pois o domínio permite novas categorias e não possui endpoint de categorias.
+Os filtros são aplicados ao enviar o formulário, sem consultas a cada tecla;
+alterá-los reinicia a paginação. A URL preserva a consulta ao recarregar, compartilhar
+ou navegar pelo histórico. Requisições anteriores são canceladas para evitar que
+respostas atrasadas substituam a consulta atual. Há estados de carregamento, vazio
+e erro com nova tentativa.
+
+A página de conta ainda não contém formulário de login. Detalhes e gerenciamento
+serão implementados nas próximas etapas. Em produção,
 o servidor da SPA deverá redirecionar rotas do frontend para index.html, preservando
 as rotas `/api`; o Vite já oferece esse fallback em desenvolvimento.
 
@@ -274,6 +285,9 @@ Verificado no ambiente de desenvolvimento:
   de rede simulada na consulta de sessão. Sem suíte automatizada de frontend.
 - Filtros combinados e navegação entre páginas verificados no MySQL real via proxy;
   links usam o host acessível ao navegador. Build frontend passou após o ajuste.
+- Catálogo no navegador como visitante: filtros combinados, preços em ordem
+  decrescente, paginação, restauração pelo histórico, reset da página ao filtrar,
+  resultado vazio, validação 422 e recuperação após falha de rede simulada.
 
 O procedimento foi executado também em uma cópia isolada dos arquivos versionados,
 sem ambiente nem dependências locais copiados, com banco e volumes novos.
@@ -284,7 +298,7 @@ Não foi adicionada suíte automatizada de frontend nesta etapa.
 
 ## Limitações e próximos passos
 
-Ainda faltam as interfaces do catálogo, login e gerenciamento e o polimento da
+Ainda faltam as interfaces de detalhe, login e gerenciamento e o polimento da
 entrega. O formato de erros e o Resource de produtos estão preparados;
 o endpoint de saúde mantém seu formato explícito de diagnóstico.
 

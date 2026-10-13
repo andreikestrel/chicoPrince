@@ -11,7 +11,7 @@ onMounted(refreshSession)
     <header>
       <RouterLink class="brand" to="/" aria-label="Chico Prince, início">CHICO PRINCE<span>®</span></RouterLink>
       <nav aria-label="Navegação principal">
-        <RouterLink to="/">Início</RouterLink>
+        <RouterLink to="/">Catálogo</RouterLink>
         <RouterLink to="/conta">Minha conta</RouterLink>
       </nav>
     </header>
