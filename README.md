@@ -7,7 +7,8 @@ com API Laravel, banco MySQL e interface Vue 3 que consome a própria API.
 
 A base de desenvolvimento está funcional: Laravel e MySQL executam em containers,
 as migrations iniciais estão aplicadas e o Vue consulta a saúde da API e do banco.
-O catálogo, os dados de exemplo, a autenticação e o CRUD ainda estão em desenvolvimento.
+O modelo e os dados de exemplo estão disponíveis. O contrato REST está documentado;
+a autenticação, o CRUD e as telas do catálogo ainda estão em desenvolvimento.
 
 ## Stack e arquitetura
 
@@ -61,7 +62,8 @@ docker run --rm --mount "type=bind,source=${PWD}/backend,target=/var/www/html" -
 
 O [script de ambiente](./backend/scripts/init-env.php) cria o arquivo local de
 configuração a partir de [.env.example](./backend/.env.example), com chave da aplicação
-e senhas aleatórias. Se ele já existe, seus valores são preservados.
+e senhas aleatórias. Se ele já existe, seus valores são preservados; a senha de
+demonstração é adicionada somente quando estiver ausente ou vazia.
 Nenhuma credencial precisa ser incluída no repositório.
 
 ### 2. Construir e iniciar os serviços
@@ -90,8 +92,23 @@ para manter os arquivos gerados acessíveis ao processo web. No WSL/Linux, tamb�
 é possível usar `./vendor/bin/sail` dentro de [backend/](./backend/).
 
 As migrations criam as tabelas iniciais do Laravel e a tabela de produtos.
-Os seeders de produtos ainda não foram implementados; não há catálogo de exemplo
-nem credencial de login disponível nesta etapa.
+Para popular o banco de desenvolvimento:
+
+```sh
+docker compose -f backend/compose.yaml exec --user sail laravel.test php scripts/init-env.php
+docker compose -f backend/compose.yaml exec --user sail laravel.test php artisan db:seed
+```
+
+A carga cria 24 produtos fictícios, três categorias (Camisetas, Canecas e Ecobags),
+preços variados e itens com e sem estoque. Imagens são nulas, sem downloads ou
+dependência de serviços externos. Nomes estáveis evitam duplicação ao repetir
+a carga; produtos editados localmente são preservados enquanto mantiverem o nome.
+
+O usuário padrão é `dev@example.test`. Sua senha vem de `SEED_USER_PASSWORD` no
+ambiente local, gerada pelo script e nunca impressa. Consulte esse valor somente
+no seu arquivo privado. O seeder preserva usuários existentes e não redefine
+suas senhas. Os seeders de demonstração aceitam apenas ambientes local/testing.
+O fluxo de login ainda será implementado.
 
 ### 4. Acessar
 
@@ -123,6 +140,8 @@ Os exemplos versionados documentam a configuração sem segredos:
 | `DB_CONNECTION` / `DB_HOST` / `DB_PORT` | `mysql` / `mysql` / `3306` |
 | `DB_DATABASE` / `DB_USERNAME` | Banco e usuário `chico_prince` |
 | `DB_PASSWORD` / `DB_ROOT_PASSWORD` | Senhas geradas localmente |
+| `SEED_USER_EMAIL` | Email do usuário de demonstração, padrão dev@example.test |
+| `SEED_USER_PASSWORD` | Senha local gerada pelo script; mínimo de 12 caracteres |
 | `WWWUSER` / `WWWGROUP` | UID/GID do usuário Sail, padrão 1000 |
 | `VITE_API_BASE_URL` | `/api`, prefixo usado pelo navegador |
 | `API_PROXY_TARGET` | `http://laravel.test` no Compose; `http://127.0.0.1:8081` para Vite no host |
@@ -191,8 +210,16 @@ quando esse descarte for intencional:
 docker compose -f backend/compose.yaml exec --user sail laravel.test php artisan migrate:fresh
 ```
 
-Esse reset não popula produtos; os seeders de domínio ainda serão implementados.
+Para recriar e popular o banco descartando os dados atuais, use
+`php artisan migrate:fresh --seed` no lugar de `php artisan migrate:fresh`.
 Não use `down -v` no fluxo normal: ele remove também os volumes persistentes.
+
+## Contrato da API
+
+O [contrato REST](./docs/API.md) descreve rotas, acesso, payloads, paginação,
+parâmetros de filtros e códigos HTTP. ProductResource e o tratamento padronizado
+de exceções já estão implementados e testados. As rotas de produtos ainda serão
+adicionadas com autenticação, FormRequests e CRUD.
 
 ## Verificações
 
@@ -207,10 +234,10 @@ Verificado no ambiente de desenvolvimento:
 
 - Build e inicialização dos três serviços pelo Compose.
 - Migrations iniciais executadas no MySQL.
-- Suíte backend padrão: 6 testes passaram, 18 assertions; o teste específico de
+- Suíte backend padrão: 14 testes passaram, 70 assertions; o teste específico de
   estoque negativo no MySQL é ignorado quando o banco de teste é SQLite.
-- Testes de produtos executados também em MySQL isolado: 3 passaram, 13 assertions,
-  incluindo precisão do preço e rejeição de estoque negativo pelo banco.
+- Testes de produtos e seeders executados também em MySQL isolado: 5 passaram,
+  26 assertions, incluindo precisão do preço, estoque negativo e repetição da carga.
 - Reversão e reaplicação da migration de produtos verificadas no banco isolado.
 - TypeScript e build Vite executados no container Node.
 - HTTP 200 nas rotas de saúde e no proxy do Vite, com consulta real ao MySQL.
@@ -225,10 +252,10 @@ Não foi adicionada suíte automatizada de frontend nesta etapa.
 
 ## Limitações e próximos passos
 
-Ainda faltam os requisitos de domínio: seeders, autenticação,
+Ainda faltam os requisitos de domínio: autenticação,
 FormRequests, CRUD, filtros combináveis, paginação, ordenação, logs e as respectivas
-interfaces. A padronização geral dos erros e respostas será definida junto ao
-contrato da API; o endpoint de saúde já possui formato explícito.
+interfaces. O formato de erros e o Resource de produtos estão preparados;
+o endpoint de saúde mantém seu formato explícito de diagnóstico.
 
 Importação externa, filas, monitoramento e Elasticsearch não estão implementados.
 São opcionais e ficam subordinados à conclusão dos requisitos obrigatórios.
