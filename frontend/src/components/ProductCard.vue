@@ -15,7 +15,9 @@ const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: '
 
 <template>
   <article class="product-card">
-    <ProductImage :src="product.image" :alt="product.name" />
+    <RouterLink class="product-image-link" :to="{ name: 'product', params: { id: product.id }, query: catalogQuery }">
+      <ProductImage :src="product.image" :alt="product.name" />
+    </RouterLink>
     <div class="product-info">
       <p class="product-category">{{ product.category }}</p>
       <h2><RouterLink :to="{ name: 'product', params: { id: product.id }, query: catalogQuery }">{{ product.name }}</RouterLink></h2>
