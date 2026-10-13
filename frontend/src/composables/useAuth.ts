@@ -33,7 +33,7 @@ async function refreshSession(): Promise<void> {
 
 async function login(email: string, password: string): Promise<void> {
   if (pending) await pending
-  await prepareCsrf()
+  await prepareCsrf(true)
   const response = await api.post<{ data: User }>('/login', { email, password })
   user.value = response.data.data
   status.value = 'authenticated'
